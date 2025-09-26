@@ -19,6 +19,11 @@
 
 class hScore
 {
+    // TODO: estruturar ScoreEntry para devolver nome e pontuação juntos
+//     struct ScoreEntry {
+//         std::string playerName;
+//         unsigned long playerScore;
+//     };
 private:
     std::string
             name[MAXENTRIES];
@@ -26,6 +31,7 @@ private:
             score[MAXENTRIES];
     char
             filename[20];
+    // TODO: método interno para ordenar vetores após operações de leitura/adição
 public:
     hScore();
     ~hScore();
@@ -43,4 +49,6 @@ public:
     bool onlist(unsigned int) const;
 
     void setfilename(std::string fn);
+    // TODO: disponibilizar ranking completo
+    //     std::vector<ScoreEntry> getRanking() const;
 };

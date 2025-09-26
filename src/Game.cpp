@@ -344,12 +344,17 @@ void Game::renderViewHscore() {
     int i, sc;
     std::string nm;
 
+    // TODO: armazenar ranking ordenado para ser desenhado em tela
+    // std::vector<hScore::ScoreEntry> ranking;
+
     col.r = col.g = col.b = 255;
 
     rect.x = settings.fieldwidth*settings.tilesize / 2 - 200;
     rect.w = 400;
     rect.y = settings.fieldheight*settings.tilesize / 2 - 200;
     rect.h = 50;
+
+    // TODO: obter lista ordenada de pontuações para exibir ranking
 
     try {
         // DRAW FIELD + SPRITES
@@ -380,6 +385,7 @@ void Game::renderViewHscore() {
 
         for (i=0;i<MAXENTRIES;i++) {
 
+            // TODO: montar texto com posição e nome do jogador
             nm= "";
             nm=hscore.getName(i);
             sc=hscore.getScore(i);
@@ -398,7 +404,7 @@ void Game::renderViewHscore() {
 
             rect.x = settings.fieldwidth * settings.tilesize / 4 + 200;
 
-
+            // TODO: renderizar pontuação do jogador correspondente
             scstr.str("");
             if ( sc ) {
                 scstr << sc;
