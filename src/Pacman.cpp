@@ -15,6 +15,18 @@
 extern Log logtxt;
 extern App app;
 
+namespace {
+    const int kAnimationFrameSequence[] = {
+            0, 0, 1, 1, 2, 2, 3, 3,
+            4, 4, 5, 5, 6, 6, 7, 7,
+            7, 7, 6, 6, 5, 5, 4, 4,
+            3, 3, 2, 2, 1, 1, 0, 0
+    };
+
+    const unsigned int kAnimationFrameSequenceLength =
+            sizeof(kAnimationFrameSequence) / sizeof(kAnimationFrameSequence[0]);
+}
+
 void Pacman::setSpeedMult( int s) {
     spdmult = s;
 }
@@ -151,59 +163,80 @@ void Pacman::Update(int time) {
 }
 void Pacman::Draw() {
 
-    int i;
+    int frameIndex = getAnimationFrame();
     SDL_Rect pos;
-
-    //calculate displayed animation frame from animcounter.. abs is not the right function
-    //there's probably a better way to handle this:
-    if ( animcounter < 2 ) i=0;
-    else if ( animcounter >= 2 && animcounter < 4 ) i=1;
-    else if ( animcounter >= 4 && animcounter < 6 ) i=2;
-    else if ( animcounter >= 6 && animcounter < 8 ) i=3;
-    else if ( animcounter >= 8 && animcounter < 10 ) i=4;
-    else if ( animcounter >= 10 && animcounter < 12 ) i=5;
-    else if ( animcounter >= 12 && animcounter < 14 ) i=6;
-    else if ( animcounter >= 14 && animcounter < 16 ) i=7;
-    else if ( animcounter >= 16 && animcounter < 18 ) i=7;
-    else if ( animcounter >= 18 && animcounter < 20 ) i=6;
-    else if ( animcounter >= 20 && animcounter < 22 ) i=5;
-    else if ( animcounter >= 22 && animcounter < 24 ) i=4;
-    else if ( animcounter >= 24 && animcounter < 26 ) i=3;
-    else if ( animcounter >= 26 && animcounter < 28 ) i=2;
-    else if ( animcounter >= 28 && animcounter < 30 ) i=1;
-    else if ( animcounter >= 30 && animcounter < 32 ) i=0;
-    else i=0; //avoid compiler warning
 
     pos.y=ypix;
     pos.x=xpix;
     pos.w=PACSIZE;
     pos.h=PACSIZE;
 
-    if (dx == 1 && dy == 0) {	//right
-        SDL_SetAlpha(pacEl[i].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-        SDL_BlitSurface(pacEl[i].get(),NULL,buf.get(),&pos);
-    }
-    else if (dx == -1 && dy == 0) {	//left
-        SDL_SetAlpha(pacElRot[i][1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-        SDL_BlitSurface(pacElRot[i][1].get(),NULL,buf.get(),&pos);
-    }
-    else if (dx == 0 && dy == -1) {	//up
-        SDL_SetAlpha(pacElRot[i][2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-        SDL_BlitSurface(pacElRot[i][2].get(),NULL,buf.get(),&pos);
-    }
-    else if (dx == 0 && dy == 1) {	//down
-        SDL_SetAlpha(pacElRot[i][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-        SDL_BlitSurface(pacElRot[i][0].get(),NULL,buf.get(),&pos);
-    }
-    else if (dx == 0 && dy == 0) {	//init position
-        SDL_SetAlpha(pacEl[i].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-        SDL_BlitSurface(pacEl[i].get(),NULL,buf.get(),&pos);
+    SDL_Surface *surface = getSurfaceForDirection(frameIndex);
+
+    if (surface) {
+        SDL_SetAlpha(surface,SDL_SRCALPHA|SDL_RLEACCEL,alpha);
+        SDL_BlitSurface(surface,NULL,buf.get(),&pos);
     }
 
     if ( !paused) {
-        if (animcounter == 31) animcounter = 0;
-        else animcounter++;
+        animcounter = (animcounter + 1) % getAnimationSequenceLength();
     }
+}
+
+int Pacman::getAnimationFrame() const {
+    if (kAnimationFrameSequenceLength == 0)
+        return 0;
+
+    return kAnimationFrameSequence[animcounter % kAnimationFrameSequenceLength];
+}
+
+unsigned int Pacman::getAnimationSequenceLength() const {
+    return kAnimationFrameSequenceLength;
+}
+
+SDL_Surface* Pacman::getSurfaceForDirection(int frameIndex) const {
+    if (frameIndex < 0 || frameIndex >= NUMPACANIM)
+        return NULL;
+
+    struct DirectionCase {
+        int dx;
+        int dy;
+        SDL_Surface* (Pacman::*getter)(int) const;
+    };
+
+    static const DirectionCase mappings[] = {
+            { 1,  0, &Pacman::surfaceRight },
+            { -1, 0, &Pacman::surfaceLeft  },
+            { 0, -1, &Pacman::surfaceUp    },
+            { 0,  1, &Pacman::surfaceDown  }
+    };
+
+    for (size_t i = 0; i < sizeof(mappings)/sizeof(mappings[0]); ++i) {
+        if (dx == mappings[i].dx && dy == mappings[i].dy)
+            return (this->*mappings[i].getter)(frameIndex);
+    }
+
+    return surfaceIdle(frameIndex);
+}
+
+SDL_Surface* Pacman::surfaceRight(int frameIndex) const {
+    return pacEl[frameIndex].get();
+}
+
+SDL_Surface* Pacman::surfaceLeft(int frameIndex) const {
+    return pacElRot[frameIndex][1].get();
+}
+
+SDL_Surface* Pacman::surfaceUp(int frameIndex) const {
+    return pacElRot[frameIndex][2].get();
+}
+
+SDL_Surface* Pacman::surfaceDown(int frameIndex) const {
+    return pacElRot[frameIndex][0].get();
+}
+
+SDL_Surface* Pacman::surfaceIdle(int frameIndex) const {
+    return pacEl[frameIndex].get();
 }
 
 

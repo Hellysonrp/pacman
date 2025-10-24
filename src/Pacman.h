@@ -74,4 +74,13 @@ private:
     shared_ptr<SDL_Surface>
             pacEl[NUMPACANIM],
             pacElRot[NUMPACANIM][3];
+
+    int getAnimationFrame() const;
+    unsigned int getAnimationSequenceLength() const;
+    SDL_Surface* getSurfaceForDirection(int frameIndex) const;
+    SDL_Surface* surfaceRight(int frameIndex) const;
+    SDL_Surface* surfaceLeft(int frameIndex) const;
+    SDL_Surface* surfaceUp(int frameIndex) const;
+    SDL_Surface* surfaceDown(int frameIndex) const;
+    SDL_Surface* surfaceIdle(int frameIndex) const;
 };
