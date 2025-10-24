@@ -79,6 +79,11 @@ public:
     void PrepareShutdown();
 
 private:
+    void handleKeyDown(const SDL_KeyboardEvent& keyEvent);
+    void handleMouseButton(const SDL_MouseButtonEvent& buttonEvent);
+    void handleMouseMotion(const SDL_MouseMotionEvent& motionEvent);
+    void handleMovementKey(int direction);
+
     int
             state,
             counter;

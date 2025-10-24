@@ -90,8 +90,11 @@ void Game::editorSave() {
     if ( file.is_open() ) file.close();
 
     bool isincluded = false;
-    for (i=0;i< settings.lvlpathcount;i++) {
-        if ( editorpath == settings.lvlpath[i] ) isincluded = true;
+    for (const auto& path : settings.lvlpath) {
+        if (editorpath == path) {
+            isincluded = true;
+            break;
+        }
     }
     if ( !isincluded && !error) {
         file.open("pacman.cfg", std::ios::out | std::ios::app);
@@ -100,7 +103,6 @@ void Game::editorSave() {
             file << "\nLEVEL_PATH=" << editorpath;
             if (file.is_open()) file.close();
             settings.lvlpath.push_back(editorpath);
-            settings.lvlpathcount++;
         }
     }
 
@@ -240,83 +242,99 @@ void Game::emptyMsgPump() {
     while ( SDL_PollEvent(&ev) == 1 ) {
         switch(ev.type) {
         case SDL_KEYDOWN:
-            switch (ev.key.keysym.sym ) {
-            case SDLK_ESCAPE:
-            case SDLK_q:
-                app.setQuit(true);
-                break;
-            case SDLK_UP:
-                processInput(UP);
-                ((Pacman*)objects[1])->setNextDir( UP );
-                break;
-            case SDLK_DOWN:
-                processInput(DOWN);
-                ((Pacman*)objects[1])->setNextDir( DOWN );
-                break;
-            case SDLK_LEFT:
-                processInput(LEFT);
-                ((Pacman*)objects[1])->setNextDir( LEFT );
-                break;
-            case SDLK_RIGHT:
-                processInput(RIGHT);
-                ((Pacman*)objects[1])->setNextDir( RIGHT );
-                break;
-            case SDLK_SPACE:
-                boost();
-                break;
-            case SDLK_p:
-                if ( getState() == STATE_GAME )
-                    pause();
-                break;
-            case SDLK_n:
-                if ( getState() != STATE_ENTER_HSCORE )
-                    gameInit();
-                break;
-            case SDLK_l:
-                settings.lvlpathcurrent++;
-                if ( settings.lvlpathcurrent >= settings.lvlpathcount)
-                    settings.lvlpathcurrent=0;
-                gameInit();
-                break;
-            case SDLK_s:
-                settings.skinspathcurrent++;
-                if ( settings.skinspathcurrent >= settings.skinspathcount)
-                    settings.skinspathcurrent=0;
-                changeSkin();
-                break;
-            case SDLK_e:
-                initEditor();
-                setState( STATE_EDITOR );
-                break;
-            case SDLK_w:
-                //                        std::cerr << "w: save map not yet implemented";
-                editorSave();
-                break;
-            case SDLK_f:
-                toggleFps();
-                break;
-            case SDLK_h:
-                setState( STATE_VIEW_HSCORE );
-                break;
-            case SDLK_RETURN:
-                processInput(ENTER);
-                break;
-            default:
-                break;
-            }
+            handleKeyDown(ev.key);
             break;
         case SDL_MOUSEBUTTONDOWN:
-            if ( getState() == STATE_EDITOR )
-                processInput( CLICK, ev.button.x , ev.button.y);
+            handleMouseButton(ev.button);
             break;
         case SDL_MOUSEMOTION:
-            if ( getState() == STATE_EDITOR && ev.motion.state&SDL_BUTTON(1) )
-                processInput( CLICK, ev.motion.x, ev.motion.y);
+            handleMouseMotion(ev.motion);
             break;
         default:
             break;
         }
     }
+}
+
+void Game::handleKeyDown(const SDL_KeyboardEvent& keyEvent) {
+    switch (keyEvent.keysym.sym) {
+    case SDLK_ESCAPE:
+    case SDLK_q:
+        app.setQuit(true);
+        break;
+    case SDLK_UP:
+        handleMovementKey(UP);
+        break;
+    case SDLK_DOWN:
+        handleMovementKey(DOWN);
+        break;
+    case SDLK_LEFT:
+        handleMovementKey(LEFT);
+        break;
+    case SDLK_RIGHT:
+        handleMovementKey(RIGHT);
+        break;
+    case SDLK_SPACE:
+        boost();
+        break;
+    case SDLK_p:
+        if ( getState() == STATE_GAME )
+            pause();
+        break;
+    case SDLK_n:
+        if ( getState() != STATE_ENTER_HSCORE )
+            gameInit();
+        break;
+    case SDLK_l:
+        if (!settings.lvlpath.empty()) {
+            settings.lvlpathcurrent++;
+            if (settings.lvlpathcurrent >= static_cast<int>(settings.lvlpath.size()))
+                settings.lvlpathcurrent=0;
+        }
+        gameInit();
+        break;
+    case SDLK_s:
+        if (!settings.skinspath.empty()) {
+            settings.skinspathcurrent++;
+            if (settings.skinspathcurrent >= static_cast<int>(settings.skinspath.size()))
+                settings.skinspathcurrent=0;
+        }
+        changeSkin();
+        break;
+    case SDLK_e:
+        initEditor();
+        setState( STATE_EDITOR );
+        break;
+    case SDLK_w:
+        editorSave();
+        break;
+    case SDLK_f:
+        toggleFps();
+        break;
+    case SDLK_h:
+        setState( STATE_VIEW_HSCORE );
+        break;
+    case SDLK_RETURN:
+        processInput(ENTER);
+        break;
+    default:
+        break;
+    }
+}
+
+void Game::handleMouseButton(const SDL_MouseButtonEvent& buttonEvent) {
+    if ( getState() == STATE_EDITOR )
+        processInput( CLICK, buttonEvent.x , buttonEvent.y);
+}
+
+void Game::handleMouseMotion(const SDL_MouseMotionEvent& motionEvent) {
+    if ( getState() == STATE_EDITOR && motionEvent.state&SDL_BUTTON(1) )
+        processInput( CLICK, motionEvent.x, motionEvent.y);
+}
+
+void Game::handleMovementKey(int direction) {
+    processInput(direction);
+    ((Pacman*)objects[PAC])->setNextDir( direction );
 }
 void Game::toggleSound() {
 
