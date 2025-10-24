@@ -25,8 +25,8 @@ public:
     bool LoadSettings(string filename);
 
     //searches for str in level/skinspaths; if successful, sets currently selected path.
-    //returns 0 on success, 1 on failure
-    int setPath(int mode, string str);
+    //throws Error when the path cannot be found
+    void setPath(int mode, string str);
 
     //////////////////////////////
     // VARIABLES	- APP
@@ -54,9 +54,7 @@ public:
             baddieiq,
             vuln_duration,
 
-            lvlpathcount,
             lvlpathcurrent,
-            skinspathcount,
             skinspathcurrent;
 
     std::vector<string>

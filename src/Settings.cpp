@@ -12,31 +12,27 @@
 
 extern Log logtxt;
 
-int Settings::setPath(int mode,std::string str) {
-    int i;
-
+void Settings::setPath(int mode,std::string str) {
     switch (mode) {
     case MODE_LEVELS:
-        for (i=0;i<lvlpathcount;i++) {
+        for (size_t i = 0; i < lvlpath.size(); ++i) {
             if (lvlpath[i]=="./levels/" + str + "/") {
-                lvlpathcurrent=i;
-                return 0;
+                lvlpathcurrent=static_cast<int>(i);
+                return;
             }
         }
-        break;
+        throw Error("Level path not found: " + str);
     case MODE_SKINS:
-        for (i=0;i<skinspathcount;i++) {
+        for (size_t i = 0; i < skinspath.size(); ++i) {
             if (skinspath[i]=="./skins/" + str + "/") {
-                skinspathcurrent=i;
-                return 0;
+                skinspathcurrent=static_cast<int>(i);
+                return;
             }
         }
-        break;
+        throw Error("Skin path not found: " + str);
     default:
-        break;
+        throw Error("Unknown mode provided to Settings::setPath");
     }
-
-    return 1;
 }
 
 string Settings::getFile(string filename) {
@@ -98,12 +94,10 @@ bool Settings::LoadSettings(std::string filename) {
             else if (buffer == "LEVEL_PATH") {
                 getline(file, tmpstr, ';');
                 lvlpath.push_back("./levels/" + tmpstr + "/");
-                lvlpathcount++;
             }
             else if (buffer == "SKINS_PATH") {
                 getline(file, tmpstr, ';');
                 skinspath.push_back("./skins/" + tmpstr + "/");
-                skinspathcount++;
             }
         }
     }
@@ -119,9 +113,7 @@ Settings::Settings() {
     width = 640;
     height = 480;
 
-    lvlpathcount = 0;
     lvlpathcurrent = 0;
-    skinspathcount = 0;
     skinspathcurrent = 0;
 
     gatex = 0;
