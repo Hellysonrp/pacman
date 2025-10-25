@@ -25,12 +25,10 @@ void BckgrObj::Draw(int ix, int iy, int obj, int type, int alp) {
     pos.h=pos.w=TILE_SIZE;
 
     if (type == 1) {
-        SDL_SetAlpha(objEl[obj].get(),SDL_SRCALPHA|SDL_RLEACCEL,alp);
-        SDL_BlitSurface(objEl[obj].get(),NULL,buf.get(),&pos);
+        drawSprite(objEl[obj], pos, alp);
     }
     else {
-        SDL_SetAlpha(mapEl[obj].get(),SDL_SRCALPHA|SDL_RLEACCEL,alp);
-        SDL_BlitSurface(mapEl[obj].get(),NULL,buf.get(),&pos);
+        drawSprite(mapEl[obj], pos, alp);
     }
 }
 
@@ -40,6 +38,11 @@ void BckgrObj::Draw(int ix, int iy, int obj, int type) {
 
 void BckgrObj::setFruitAlpha(int a) {
     fruitalpha = a;
+}
+
+void BckgrObj::drawSprite(shared_ptr<SDL_Surface> sprite, SDL_Rect& position, int alpha) {
+    SDL_SetAlpha(sprite.get(), SDL_SRCALPHA|SDL_RLEACCEL, alpha);
+    SDL_BlitSurface(sprite.get(), NULL, buf.get(), &position);
 }
 
 void BckgrObj::Draw() {
@@ -71,86 +74,70 @@ void BckgrObj::Draw() {
             if (map[j*width+i]==HORIZONTAL_WALL	&&	// horizontal line
                 ( map[j*width+i+1] != EMPTY || i == width-1 ) &&
                 ( map[j*width+i-1] != EMPTY || i == 0 ) ) {
-                SDL_SetAlpha(mapEl[1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[1].get(), NULL, buf.get(), &pos );
+                drawSprite(mapEl[1], pos, alpha);
             }
 
             else if (map[j*width+i]==HORIZONTAL_WALL)	{	// vertical line
-                SDL_SetAlpha(mapElRot[1][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[1][0].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[1][0], pos, alpha);
             }
 
             else if (map[j*width+i]==GHOST_DOOR &&		//ghost door
                      map[j*width+i + 1] != EMPTY &&
                      map[j*width+i - 1] != EMPTY) {
-                SDL_SetAlpha(mapEl[2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[2].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[2], pos, alpha);
             }
             else if (map[j*width+i]==GHOST_DOOR)	{	// vertical ghost door
-                SDL_SetAlpha(mapElRot[2][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[2][0].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[2][0], pos, alpha);
             }
 
             else if (map[j*width+i]==UPPER_LEFT_CORNER) {		//upper left corner
-                SDL_SetAlpha(mapEl[3].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[3].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[3], pos, alpha);
             }
             else if (map[j*width+i]==UPPER_RIGHT_CORNER) {		// upper right corner
-                SDL_SetAlpha(mapEl[4].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[4].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[4], pos, alpha);
             }
             else if (map[j*width+i]==LOWER_RIGHT_CORNER) {		// lower  right corner
-                SDL_SetAlpha(mapEl[5].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[5].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[5], pos, alpha);
             }
             else if (map[j*width+i]==LOWER_LEFT_CORNER) {		// lower left corner
-                SDL_SetAlpha(mapEl[6].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[6].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[6], pos, alpha);
             }
 
             else if (map[j*width+i]==LEFT_T && 		// left T
                      ( map[j*width+i-1]==EMPTY || i == 0 ) ) {
-                SDL_SetAlpha(mapEl[7].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[7].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[7], pos, alpha);
             }
             else if (map[j*width+i]==LEFT_T)	{	// upside down T
-                SDL_SetAlpha(mapElRot[7][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[7][0].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[7][0], pos, alpha);
             }
             else if (map[j*width+i]==RIGHT_T &&		// right T
                      ( map[j*width+i+1]==EMPTY || i == width-1 ) ) {
-                SDL_SetAlpha(mapEl[8].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[8].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[8], pos, alpha);
             }
             else if (map[j*width+i]==RIGHT_T)	{	// upright T
-                SDL_SetAlpha(mapElRot[8][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[8][0].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[8][0], pos, alpha);
             }
 
             else if (map[j*width+i]==STUB &&
                      map[j*width+i-1] != EMPTY &&
                      map[j*width+i-1] != GHOST_DOOR &&
                      i > 0 )	 {//right stub
-                SDL_SetAlpha(mapEl[9].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapEl[9].get(), NULL, buf.get(), &pos);
+                drawSprite(mapEl[9], pos, alpha);
             }
             else if (map[j*width+i]==STUB &&
                      map[j*width+i+1] != EMPTY &&
                      map[j*width+i+1] != GHOST_DOOR &&
                      i < width-1) {	// left stub
-                SDL_SetAlpha(mapElRot[9][1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[9][1].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[9][1], pos, alpha);
             }
             else if (map[j*width+i]==STUB &&
                      map[(j+1)*width+i] != EMPTY &&
                      map[(j+1)*width+i] != GHOST_DOOR &&
                      j < height -1) {	// upper stub
-                SDL_SetAlpha(mapElRot[9][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[9][0].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[9][0], pos, alpha);
             }
             else if (map[j*width+i]==STUB)	{// lower stub
-                SDL_SetAlpha(mapElRot[9][2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(mapElRot[9][2].get(), NULL, buf.get(), &pos);
+                drawSprite(mapElRot[9][2], pos, alpha);
             }
         }
     }
@@ -166,18 +153,15 @@ void BckgrObj::Draw() {
             pos.w=TILE_SIZE;
 
             if (objmap[j*width+i]==SMALL_DOT) {
-                SDL_SetAlpha(objEl[1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(objEl[1].get(), NULL, buf.get(), &pos);
+                drawSprite(objEl[1], pos, alpha);
                 objcounter++;
             }
             if (objmap[j*width+i]==LARGE_DOT) {	// BIG DOTS!
-                SDL_SetAlpha(objEl[2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-                SDL_BlitSurface(objEl[2].get(), NULL, buf.get(), &pos);
+                drawSprite(objEl[2], pos, alpha);
                 objcounter++;
             }
             if (objmap[j*width+i]==FRUIT && specialspawned && !specialeaten) {	// fruit
-                SDL_SetAlpha(objEl[3].get(),SDL_SRCALPHA,fruitalpha);
-                SDL_BlitSurface(objEl[3].get(), NULL, buf.get(), &pos);
+                drawSprite(objEl[3], pos, fruitalpha);
                 objcounter++;
             }
         }

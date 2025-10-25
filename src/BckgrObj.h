@@ -87,4 +87,6 @@ private:
     bool
             specialspawned,
             specialeaten;
+
+    void drawSprite(shared_ptr<SDL_Surface> sprite, SDL_Rect& position, int alpha);
 };
