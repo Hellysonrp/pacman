@@ -24,7 +24,7 @@ Settings settings;
 //////////////////////////////////////////////////////
 
 int main( int argc, char** argv ) {
-    std::string str="",level="",skin="",editfile="";
+    std::string str="",level="0",skin="original",editfile="";
     bool editor=false;
 
     for (int i = 1;i<argc;i++) {

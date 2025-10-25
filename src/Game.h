@@ -52,7 +52,7 @@ public:
 
     void resetLvl();
     void nextLvl();
-    void gameInit(std::string level="", std::string skin="", bool editor=false);
+    void gameInit(std::string level="0", std::string skin="original", bool editor=false);
 
     bool pause();
     void boost();

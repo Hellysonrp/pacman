@@ -85,8 +85,6 @@ void hScore::add(std::string n, unsigned int sc) {
         score[i]=sc;
         // TODO: garantir que o array interno permaneça ordenado após inserção
     }
-
-hScore::hScore() {
 }
 
 void hScore::setfilename(std::string fn) {
@@ -114,7 +112,6 @@ hScore::hScore() {
 // TODO: implementar função que ordena entradas por pontuação
 
 // TODO: fornecer visão ordenada para exibição do ranking
-}
 
 hScore::~hScore(void)
 {
