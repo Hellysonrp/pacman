@@ -19,6 +19,7 @@
 
 #include "Constants.h"
 #include "Object.h"
+#include "Position.h"
 #include "Log.h"
 #include "App.h"
 #include "Error.h"
@@ -50,19 +51,13 @@ public:
     int getYpix();
 
 private:
+    Position
+            tilePos,	//current position in tiles (all positions refer to upper left corner)
+            pixelPos,	//current position in pixels
+            direction,	//current direction in x and y
+            nextDirection;	//queued direction
+
     int
-            x,	//current position in tiles (all positions refer to upper left corner)
-            y,
-
-            dx,	//current direction in x and y
-            dy,
-
-            nextdx,	//queued direction
-            nextdy,
-
-            xpix,	//current position in pixels
-            ypix,
-
             spdmod,	// speed modifier	- default 100?
             spdmult,
 

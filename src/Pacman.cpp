@@ -43,35 +43,31 @@ void Pacman::Draw(int ix, int iy, int obj, int type) {
 }
 void Pacman::reset(int ix, int iy) {
     animcounter=0;
-    x=ix;
-    y=iy;
-    xpix=ix*tilesize;
-    ypix=iy*tilesize;
-    xfloat= (float) xpix;
-    yfloat= (float) ypix;
-    dx=0;
-    dy=0;
-    nextdx=0;
-    nextdy=0;
+    tilePos.set(ix, iy);
+    pixelPos = tilePos.toPixels(tilesize);
+    xfloat= (float) pixelPos.getX();
+    yfloat= (float) pixelPos.getY();
+    direction.set(0, 0);
+    nextDirection.set(0, 0);
     paused=true;
 }
 void Pacman::nextIntersection(int &ix, int &iy) {
     int
-            xtmp=x,
-            ytmp=y,
+            xtmp=tilePos.getX(),
+            ytmp=tilePos.getY(),
             i=0;
 
     while (i< ( height+width) / 2 ) {
-        if (xtmp == 0 && dx == -1) xtmp = width-2;
-        else if (xtmp == width-2 && dx == 1) xtmp = 0;
-        else if (ytmp == 0 && dy == -1) ytmp = height-2;
-        else if (ytmp == height-2 && dy == 1) ytmp = 0;
+        if (xtmp == 0 && direction.getX() == -1) xtmp = width-2;
+        else if (xtmp == width-2 && direction.getX() == 1) xtmp = 0;
+        else if (ytmp == 0 && direction.getY() == -1) ytmp = height-2;
+        else if (ytmp == height-2 && direction.getY() == 1) ytmp = 0;
 
-        if ( ! collision(xtmp+dx, ytmp+dy) ) {
-            xtmp+= dx;
-            ytmp += dy;
+        if ( ! collision(xtmp+direction.getX(), ytmp+direction.getY()) ) {
+            xtmp+= direction.getX();
+            ytmp += direction.getY();
         }
-        if ( ! collision(xtmp + dy, ytmp + dx) || ! collision(xtmp - dy, ytmp - dx) ) break;
+        if ( ! collision(xtmp + direction.getY(), ytmp + direction.getX()) || ! collision(xtmp - direction.getY(), ytmp - direction.getX()) ) break;
         i++;
     }
 
@@ -84,81 +80,79 @@ void Pacman::Update(int time) {
     int oldx, oldy;
 
     //screen wrappers
-    if ( x == width-2 && dx == 1 ) {
-        x = 0;
-        xpix = 0;
+    if ( tilePos.getX() == width-2 && direction.getX() == 1 ) {
+        tilePos.setX(0);
+        pixelPos.setX(0);
         xfloat = 0;
     }
-    else if ( xpix == 0 && dx == -1 ) {
-        x = width-2;
-        xpix = x*tilesize;
-        xfloat = (float)xpix;
+    else if ( pixelPos.getX() == 0 && direction.getX() == -1 ) {
+        tilePos.setX(width-2);
+        pixelPos.setX(tilePos.getX()*tilesize);
+        xfloat = (float)pixelPos.getX();
     }
-    else if ( y == height-2 && dy == 1 ) {
-        y = 0;
-        ypix = 0;
+    else if ( tilePos.getY() == height-2 && direction.getY() == 1 ) {
+        tilePos.setY(0);
+        pixelPos.setY(0);
         yfloat = 0;
     }
-    else if ( ypix == 0 && dy == -1 ) {
-        y = height-2;
-        ypix = y*tilesize;
-        yfloat = (float)ypix;
+    else if ( pixelPos.getY() == 0 && direction.getY() == -1 ) {
+        tilePos.setY(height-2);
+        pixelPos.setY(tilePos.getY()*tilesize);
+        yfloat = (float)pixelPos.getY();
     }
 
     //remember old coords for adjustments at end
-    oldx=xpix;
-    oldy=ypix;
+    oldx=pixelPos.getX();
+    oldy=pixelPos.getY();
 
 
     //if turnaround, apply dirchange immediately
-    if ( dx == -nextdx && dy == -nextdy && dx!=dy ) {
-        dx=nextdx;
-        dy=nextdy;
+    if ( direction.getX() == -nextDirection.getX() && direction.getY() == -nextDirection.getY() && direction.getX()!=direction.getY() ) {
+        direction=nextDirection;
     }
     //if node is reached
-    if ( xpix%tilesize == 0 && ypix%tilesize == 0 ) {
-        if ( dx != nextdx || dy != nextdy ) {
+    if ( pixelPos.getX()%tilesize == 0 && pixelPos.getY()%tilesize == 0 ) {
+        if ( direction.getX() != nextDirection.getX() || direction.getY() != nextDirection.getY() ) {
             //if nextdir is clear, apply dirchange
-            if ( (dirclear = (! collision(x+nextdx, y+nextdy))) ) {
-                dx=nextdx;
-                dy=nextdy;
+            if ( (dirclear = (! collision(tilePos.getX()+nextDirection.getX(), tilePos.getY()+nextDirection.getY()))) ) {
+                direction=nextDirection;
             }
         }
     }
 
     //if nextdir not clear check current dir
     if ( ! dirclear ) {
-        if ( dx >= 0 && dy >= 0)
-            dirclear = ! collision(x+dx,y+dy);
-        else if ( dx <= 0 && dy <= 0)
-            dirclear = ! collision( (xpix+dx) / tilesize, (ypix+dy) / tilesize);
+        if ( direction.getX() >= 0 && direction.getY() >= 0)
+            dirclear = ! collision(tilePos.getX()+direction.getX(),tilePos.getY()+direction.getY());
+        else if ( direction.getX() <= 0 && direction.getY() <= 0)
+            dirclear = ! collision( (pixelPos.getX()+direction.getX()) / tilesize, (pixelPos.getY()+direction.getY()) / tilesize);
     }
 
     //MOVEMENT PART STARTS HERE
 
     if ( dirclear ) {
                 //  dir    *       speed in percent
-        xfloat += ( (float)(time * dx * spdmod * spdmult) / MOVEMOD );
-        yfloat += ( (float)(time * dy * spdmod * spdmult) / MOVEMOD );
+        xfloat += ( (float)(time * direction.getX() * spdmod * spdmult) / MOVEMOD );
+        yfloat += ( (float)(time * direction.getY() * spdmod * spdmult) / MOVEMOD );
     }
 
     //COORD ADJUSTMENTS
 
-    if ( xfloat > (float)(x+1)*tilesize ) xfloat = (float)(x+1)*tilesize;
-    if ( yfloat > (float)(y+1)*tilesize ) yfloat = (float)(y+1)*tilesize;
+    if ( xfloat > (float)(tilePos.getX()+1)*tilesize ) xfloat = (float)(tilePos.getX()+1)*tilesize;
+    if ( yfloat > (float)(tilePos.getY()+1)*tilesize ) yfloat = (float)(tilePos.getY()+1)*tilesize;
 
-    if ( xfloat < (float)(x)*tilesize && oldx > (float)(x)*tilesize )
-        xfloat = (float)(x)*tilesize;
-    if ( yfloat < (float)(y)*tilesize && oldy > (float)(y)*tilesize)
-        yfloat = (float)(y)*tilesize;
+    if ( xfloat < (float)(tilePos.getX())*tilesize && oldx > (float)(tilePos.getX())*tilesize )
+        xfloat = (float)(tilePos.getX())*tilesize;
+    if ( yfloat < (float)(tilePos.getY())*tilesize && oldy > (float)(tilePos.getY())*tilesize)
+        yfloat = (float)(tilePos.getY())*tilesize;
 
     //COORD UPDATES
 
-    xpix=(int)xfloat;
-    ypix=(int)yfloat;
+    pixelPos.setX((int)xfloat);
+    pixelPos.setY((int)yfloat);
 
-    x= xpix/tilesize;
-    y=ypix/tilesize;
+    tilePos.setX(pixelPos.getX()/tilesize);
+    tilePos.setY(pixelPos.getY()/tilesize);
 
 }
 void Pacman::Draw() {
@@ -166,8 +160,8 @@ void Pacman::Draw() {
     int frameIndex = getAnimationFrame();
     SDL_Rect pos;
 
-    pos.y=ypix;
-    pos.x=xpix;
+    pos.y=pixelPos.getY();
+    pos.x=pixelPos.getX();
     pos.w=PACSIZE;
     pos.h=PACSIZE;
 
@@ -212,7 +206,7 @@ SDL_Surface* Pacman::getSurfaceForDirection(int frameIndex) const {
     };
 
     for (size_t i = 0; i < sizeof(mappings)/sizeof(mappings[0]); ++i) {
-        if (dx == mappings[i].dx && dy == mappings[i].dy)
+        if (direction.getX() == mappings[i].dx && direction.getY() == mappings[i].dy)
             return (this->*mappings[i].getter)(frameIndex);
     }
 
@@ -286,11 +280,11 @@ bool Pacman::LoadTextures(std::string path) {
     return true;
 }
 int Pacman::getXpix() {
-    return xpix;
+    return pixelPos.getX();
 }
 
 int Pacman::getYpix() {
-    return ypix;
+    return pixelPos.getY();
 }
 bool Pacman::collision(int xtmp, int ytmp) {
     //error check
@@ -306,32 +300,26 @@ bool Pacman::collision(int xtmp, int ytmp) {
 void Pacman::setNextDir(int next) {
     if (next >= 0 && next <=3 ) {
         if (next == 0) {
-            nextdx=0;
-            nextdy=-1;
+            nextDirection.set(0, -1);
         }
         if (next == 1) {
-            nextdx=1;
-            nextdy=0;
+            nextDirection.set(1, 0);
         }
         if (next == 2) {
-            nextdx=0;
-            nextdy=1;
+            nextDirection.set(0, 1);
         }
         if (next == 3) {
-            nextdx=-1;
-            nextdy=0;
+            nextDirection.set(-1, 0);
         }
     }
 }
 Pacman::Pacman(shared_ptr<SDL_Surface> buf, int os, int ix, int iy, int ispdmod,
 			   int itilesize, int iheight, int iwidth, int *imap)
 :   Object( buf, os),
-    x(ix),
-    y(iy),
-    dx(0),
-    dy(0),
-    nextdx(0),
-    nextdy(0),
+    tilePos(ix, iy),
+    pixelPos(ix * itilesize, iy * itilesize),
+    direction(0, 0),
+    nextDirection(0, 0),
     spdmod(ispdmod),
     spdmult(1),
     tilesize(itilesize),
@@ -341,9 +329,6 @@ Pacman::Pacman(shared_ptr<SDL_Surface> buf, int os, int ix, int iy, int ispdmod,
     animcounter(0)
 {
 
-    xpix=x*tilesize;
-    ypix=y*tilesize;
-
-    xfloat=(float)xpix;
-    yfloat=(float)ypix;
+    xfloat=(float)pixelPos.getX();
+    yfloat=(float)pixelPos.getY();
 }

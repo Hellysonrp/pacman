@@ -20,6 +20,7 @@
 
 #include "Constants.h"
 #include "Object.h"
+#include "Position.h"
 #include "BHeap.h"
 #include "Log.h"
 #include "App.h"
@@ -59,22 +60,15 @@ public:
     int getXpix();
     int getYpix();
 private:
+    Position
+            tilePos,	//current position in tiles (all positions refer to upper left corner)
+            pixelPos,	//current position in pixels
+            direction,	//current direction in x and y
+            nextDirection,	//queued direction
+            target,		//target position
+            pixelPosAtLastDirChange; //location where the last direction change has taken place
+
     int
-            x,	//current position in tiles (all positions refer to upper left corner)
-            y,
-
-            dx,	//current direction in x and y
-            dy,
-
-            nextdx,	//queued direction
-            nextdy,
-
-            xpix,	//current position in pixels
-            ypix,
-
-            xpix_at_last_dirchange, //location where the last direction change has taken place
-            ypix_at_last_dirchange,
-
             spdmod,	// speed modifier	- default 100?
 
             tilesize,
@@ -82,9 +76,6 @@ private:
             width,
 
             *map,
-
-            xtarget,
-            ytarget,
 
             defspeed,	//default speed
 

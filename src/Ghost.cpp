@@ -27,15 +27,14 @@ void Ghost::Draw(int ix, int iy, int obj, int type) {
     SDL_BlitSurface(ghostEl[0].get(),NULL,buf.get(),&pos);
 }
 int Ghost::getXpix() {
-    return xpix;
+    return pixelPos.getX();
 }
 
 int Ghost::getYpix() {
-    return ypix;
+    return pixelPos.getY();
 }
 void Ghost::setTarget(int ix, int iy) {
-    xtarget=ix;
-    ytarget=iy;
+    target.set(ix, iy);
 }
 bool Ghost::collision(int xtmp, int ytmp) {
     //error check
@@ -54,16 +53,12 @@ void Ghost::changeDifficulty(int spd, int iq) {
 }
 void Ghost::reset(int ix, int iy) {
     animcounter=0;
-    x=ix;
-    y=iy;
-    xpix=ix*tilesize;
-    ypix=iy*tilesize;
-    xfloat= (float) xpix;
-    yfloat= (float) ypix;
-    dx=0;
-    dy=0;
-    nextdx=0;
-    nextdy=0;
+    tilePos.set(ix, iy);
+    pixelPos = tilePos.toPixels(tilesize);
+    xfloat= (float) pixelPos.getX();
+    yfloat= (float) pixelPos.getY();
+    direction.set(0, 0);
+    nextDirection.set(0, 0);
 
     spdmod=defspeed;
     state=0;
@@ -75,13 +70,13 @@ int Ghost::getState() {
 bool Ghost::find() {
     int
             i,
-            currentx = xpix / tilesize,
-            currenty = ypix / tilesize,
+            currentx = pixelPos.getX() / tilesize,
+            currenty = pixelPos.getY() / tilesize,
             tmppos;
 
     //if target is not clear
 
-    if ( collision( xtarget, ytarget) ) return 0;
+    if ( collision( target.getX(), target.getY()) ) return 0;
 
     // reset arrays
 
@@ -99,7 +94,7 @@ bool Ghost::find() {
     //init loop
 
     parentDir[ currenty*width + currentx ]= -1;
-    Gstore[ y*width + x ] = 0;
+    Gstore[ tilePos.getY()*width + tilePos.getX() ] = 0;
     heap.add( currentx , currenty , calcF(currentx,currenty) );
 
     // loop start
@@ -118,7 +113,7 @@ bool Ghost::find() {
 
         // if current tile == target, terminate loop
 
-        if (currentx == xtarget && currenty == ytarget) return 1;
+        if (currentx == target.getX() && currenty == target.getY()) return 1;
 
         //remove from open list
 
@@ -325,29 +320,29 @@ int Ghost::calcF(int ix, int iy) const {
 
     // x-distance current tile -> target tile
 
-    b= ix > xtarget ? (ix-xtarget) : (xtarget-ix);  //current to target =H
+    b= ix > target.getX() ? (ix-target.getX()) : (target.getX()-ix);  //current to target =H
 
     //special cases: target left edge, baddie right edge
 
-    if ( ( width-1)-ix+xtarget < b ) 	b=(width-2)-ix+xtarget;	//width -1 to get correct F
+    if ( ( width-1)-ix+target.getX() < b ) 	b=(width-2)-ix+target.getX();	//width -1 to get correct F
 
     //				target right edge, baddie left edge
 
-    if (ix + (width+1) -xtarget < b )	b=ix + (width-2) -xtarget;
+    if (ix + (width+1) -target.getX() < b )	b=ix + (width-2) -target.getX();
 
     a+=b;
 
     // y-distance current tile -> target tile
 
-    b= iy > ytarget ? (iy-ytarget) : (ytarget-iy);
+    b= iy > target.getY() ? (iy-target.getY()) : (target.getY()-iy);
 
     //special case: target upper edge, baddie lower edge
 
-    if ( ( height-1)-iy+ytarget < b ) 	b=(height-2)-iy+ytarget;
+    if ( ( height-1)-iy+target.getY() < b ) 	b=(height-2)-iy+target.getY();
 
     // vice versa
 
-    if (iy + (height+1) -ytarget < b )	b=iy + (height-2) -ytarget;
+    if (iy + (height+1) -target.getY() < b )	b=iy + (height-2) -target.getY();
 
     a+=b;
 
@@ -365,7 +360,7 @@ bool Ghost::tracePath() {
     xtmp= heap.getX();
     ytmp= heap.getY();
 
-    if (ytmp == ytarget && xtmp == xtarget ) {	//error check
+    if (ytmp == target.getY() && xtmp == target.getX() ) {	//error check
 
         while ( parentDir[ ytmp*width + xtmp ] != -1 ) {
 
@@ -414,33 +409,27 @@ void Ghost::pathCalcVuln() {
     //if within the starting square
     if (gateopen) {
         if ( dirToTar == 0) {
-            nextdx = 0;
-            nextdy = -1;
+            nextDirection.set(0, -1);
         }
         else if ( dirToTar == 1 ) {
-            nextdx = 1;
-            nextdy = 0;
+            nextDirection.set(1, 0);
         }
         else if ( dirToTar == 2 ) {
-            nextdx = 0;
-            nextdy = 1;
+            nextDirection.set(0, 1);
         }
         else if ( dirToTar == 3 ) {
-            nextdx = -1;
-            nextdy = 0;
+            nextDirection.set(-1, 0);
         }
     }
 
     //if dead end
-    else if ( !dirClear[1+dx][1+dy] && !dirClear[1+dy][1+dx] && !dirClear[1-dy][1-dx] && dx != dy ) {
-        nextdx = -dx;
-        nextdy = -dy;
+    else if ( !dirClear[1+direction.getX()][1+direction.getY()] && !dirClear[1+direction.getY()][1+direction.getX()] && !dirClear[1-direction.getY()][1-direction.getX()] && direction.getX() != direction.getY() ) {
+        nextDirection.set(-direction.getX(), -direction.getY());
     }
     //generate random dir != - current dir
     else {
-        nextdx = -dx;
-        nextdy = -dy;
-        while ( nextdx == -dx && nextdy == -dy ) {
+        nextDirection.set(-direction.getX(), -direction.getY());
+        while ( nextDirection.getX() == -direction.getX() && nextDirection.getY() == -direction.getY() ) {
 
             newdir = rand()%4;
 
@@ -450,30 +439,24 @@ void Ghost::pathCalcVuln() {
             if (newdir == dirToTar ) newdir = rand()%4;
 
             if ( newdir == 0 ) {
-                nextdx = 0;
-                nextdy = -1;
+                nextDirection.set(0, -1);
             }
             else if ( newdir == 1 ) {
-                nextdx = 1;
-                nextdy = 0;
+                nextDirection.set(1, 0);
             }
             else if ( newdir == 2 ) {
-                nextdx = 0;
-                nextdy = 1;
+                nextDirection.set(0, 1);
             }
             else if ( newdir == 3 ) {
-                nextdx = -1;
-                nextdy = 0;
+                nextDirection.set(-1, 0);
             }
-            if ( !dirClear[1+nextdx][1+nextdy] ) {
-                nextdx = -dx;
-                nextdy = -dy;
+            if ( !dirClear[1+nextDirection.getX()][1+nextDirection.getY()] ) {
+                nextDirection.set(-direction.getX(), -direction.getY());
             }
         }
     }
 
-    dx=nextdx;
-    dy=nextdy;
+    direction=nextDirection;
 }
 
 void Ghost::pathCalcDead() {
@@ -485,15 +468,14 @@ void Ghost::pathCalcDead() {
 
     //translate dx + dy into dir -> 0 = up, 1 = right, 2 = down, 3 = left
 
-    if (dx == 1) cur_opp_dir = 3;
-    else if (dx == -1) cur_opp_dir = 1;
-    else if (dy == 1) cur_opp_dir = 0;
-    else if (dy == -1) cur_opp_dir = 2;
+    if (direction.getX() == 1) cur_opp_dir = 3;
+    else if (direction.getX() == -1) cur_opp_dir = 1;
+    else if (direction.getY() == 1) cur_opp_dir = 0;
+    else if (direction.getY() == -1) cur_opp_dir = 2;
 
 
 
-    xtarget= baddie_start_point_x ;
-    ytarget= baddie_start_point_y ;
+    target.set(baddie_start_point_x, baddie_start_point_y);
 
     //find path
     if ( find() ) flag=tracePath();
@@ -503,20 +485,16 @@ void Ghost::pathCalcDead() {
 
     if (! flag ) {		// pathfinding + trace successful
         if ( dirToTar == 0) {
-            nextdx = 0;
-            nextdy = -1;
+            nextDirection.set(0, -1);
         }
         else if ( dirToTar == 1 ) {
-            nextdx = 1;
-            nextdy = 0;
+            nextDirection.set(1, 0);
         }
         else if ( dirToTar == 2 ) {
-            nextdx = 0;
-            nextdy = 1;
+            nextDirection.set(0, 1);
         }
         else if ( dirToTar == 3 ) {
-            nextdx = -1;
-            nextdy = 0;
+            nextDirection.set(-1, 0);
         }
     }
 
@@ -524,43 +502,35 @@ void Ghost::pathCalcDead() {
     else {
 
         //if dead end
-        if ( !dirClear[1+dx][1+dy] && !dirClear[1+dy][1+dx] && !dirClear[1-dy][1-dx] && dx != dy ) {
-            nextdx = -dx;
-            nextdy = -dy;
+        if ( !dirClear[1+direction.getX()][1+direction.getY()] && !dirClear[1+direction.getY()][1+direction.getX()] && !dirClear[1-direction.getY()][1-direction.getX()] && direction.getX() != direction.getY() ) {
+            nextDirection.set(-direction.getX(), -direction.getY());
         }
         //generate random dir != - current dir
         else {
-            nextdx = -dx;
-            nextdy = -dy;
-            while ( nextdx == -dx && nextdy == -dy ) {
+            nextDirection.set(-direction.getX(), -direction.getY());
+            while ( nextDirection.getX() == -direction.getX() && nextDirection.getY() == -direction.getY() ) {
 
                 newdir = rand()%4;
 
                 if ( newdir == 0 ) {
-                    nextdx = 0;
-                    nextdy = -1;
+                    nextDirection.set(0, -1);
                 }
                 else if ( newdir == 1 ) {
-                    nextdx = 1;
-                    nextdy = 0;
+                    nextDirection.set(1, 0);
                 }
                 else if ( newdir == 2 ) {
-                    nextdx = 0;
-                    nextdy = 1;
+                    nextDirection.set(0, 1);
                 }
                 else if ( newdir == 3 ) {
-                    nextdx = -1;
-                    nextdy = 0;
+                    nextDirection.set(-1, 0);
                 }
-                if ( !dirClear[1+nextdx][1+nextdy] ) {
-                    nextdx = -dx;
-                    nextdy = -dy;
+                if ( !dirClear[1+nextDirection.getX()][1+nextDirection.getY()] ) {
+                    nextDirection.set(-direction.getX(), -direction.getY());
                 }
             }
         }
     }
-    dx=nextdx;
-    dy=nextdy;
+    direction=nextDirection;
 }
 
 void Ghost::pathCalcNormal() {
@@ -572,10 +542,10 @@ void Ghost::pathCalcNormal() {
 
     //translate dx + dy into dir -> 0 = up, 1 = right, 2 = down, 3 = left
 
-    if (dx == 1) cur_opp_dir = 3;
-    else if (dx == -1) cur_opp_dir = 1;
-    else if (dy == 1) cur_opp_dir = 0;
-    else if (dy == -1) cur_opp_dir = 2;
+    if (direction.getX() == 1) cur_opp_dir = 3;
+    else if (direction.getX() == -1) cur_opp_dir = 1;
+    else if (direction.getY() == 1) cur_opp_dir = 0;
+    else if (direction.getY() == -1) cur_opp_dir = 2;
 
 
     if ( gateopen && !collision(settings.gatex, settings.gatey) )
@@ -589,24 +559,20 @@ void Ghost::pathCalcNormal() {
     // TRACE PATH
 
     if (! flag &&		// pathfinding + trace successful
-        rand()%(( width+height) / 2 ) + baddie_iq > Gstore[ ytarget * width + xtarget ]  && // random roll successful
+        rand()%(( width+height) / 2 ) + baddie_iq > Gstore[ target.getY() * width + target.getX() ]  && // random roll successful
         dirToTar != cur_opp_dir) {	//and pathfinding direction is not the opposite of current direction
 
         if ( dirToTar == 0) {
-            nextdx = 0;
-            nextdy = -1;
+            nextDirection.set(0, -1);
         }
         else if ( dirToTar == 1 ) {
-            nextdx = 1;
-            nextdy = 0;
+            nextDirection.set(1, 0);
         }
         else if ( dirToTar == 2 ) {
-            nextdx = 0;
-            nextdy = 1;
+            nextDirection.set(0, 1);
         }
         else if ( dirToTar == 3 ) {
-            nextdx = -1;
-            nextdy = 0;
+            nextDirection.set(-1, 0);
         }
     }
 
@@ -614,43 +580,35 @@ void Ghost::pathCalcNormal() {
     else {
 
         //if dead end
-        if ( !dirClear[1+dx][1+dy] && !dirClear[1+dy][1+dx] && !dirClear[1-dy][1-dx] && dx != dy ) {
-            nextdx = -dx;
-            nextdy = -dy;
+        if ( !dirClear[1+direction.getX()][1+direction.getY()] && !dirClear[1+direction.getY()][1+direction.getX()] && !dirClear[1-direction.getY()][1-direction.getX()] && direction.getX() != direction.getY() ) {
+            nextDirection.set(-direction.getX(), -direction.getY());
         }
         //generate random dir != - current dir
         else {
-            nextdx = -dx;
-            nextdy = -dy;
-            while ( nextdx == -dx && nextdy == -dy ) {
+            nextDirection.set(-direction.getX(), -direction.getY());
+            while ( nextDirection.getX() == -direction.getX() && nextDirection.getY() == -direction.getY() ) {
 
                 newdir = rand()%4;
 
                 if ( newdir == 0 ) {
-                    nextdx = 0;
-                    nextdy = -1;
+                    nextDirection.set(0, -1);
                 }
                 else if ( newdir == 1 ) {
-                    nextdx = 1;
-                    nextdy = 0;
+                    nextDirection.set(1, 0);
                 }
                 else if ( newdir == 2 ) {
-                    nextdx = 0;
-                    nextdy = 1;
+                    nextDirection.set(0, 1);
                 }
                 else if ( newdir == 3 ) {
-                    nextdx = -1;
-                    nextdy = 0;
+                    nextDirection.set(-1, 0);
                 }
-                if ( !dirClear[1+nextdx][1+nextdy] ) {
-                    nextdx = -dx;
-                    nextdy = -dy;
+                if ( !dirClear[1+nextDirection.getX()][1+nextDirection.getY()] ) {
+                    nextDirection.set(-direction.getX(), -direction.getY());
                 }
             }
         }
     }
-    dx=nextdx;
-    dy=nextdy;
+    direction=nextDirection;
 }
 
 bool Ghost::collision_ignore_gate(int xtmp, int ytmp) {
@@ -673,14 +631,13 @@ void Ghost::setState(int st) {
 
         spdmod= 2*defspeed/3;
 
-        if (dx == 1) curdir=1;
-        else if (dx == -1) curdir=3;
-        else if (dy == 1) curdir=2;
-        else if (dy == -1) curdir=0;
+        if (direction.getX() == 1) curdir=1;
+        else if (direction.getX() == -1) curdir=3;
+        else if (direction.getY() == 1) curdir=2;
+        else if (direction.getY() == -1) curdir=0;
 
         if (curdir == dirToTar ) {
-            dx=-dx;
-            dy=-dy;
+            direction.set(-direction.getX(), -direction.getY());
         }
     }
     //warning mode
@@ -716,97 +673,97 @@ void Ghost::Update( int time) {
     //if target reached, set normal state
 
     if ( state == 3 &&
-        x == baddie_start_point_x &&
-        y == baddie_start_point_y) setState(0);
+        tilePos.getX() == baddie_start_point_x &&
+        tilePos.getY() == baddie_start_point_y) setState(0);
 
 
     //screen wrappers
 
-    if ( x == width-2 && dx == 1 ) {
-        x = 0;
-        xpix = 0;
+    if ( tilePos.getX() == width-2 && direction.getX() == 1 ) {
+        tilePos.setX(0);
+        pixelPos.setX(0);
         xfloat = 0;
     }
-    else if ( xpix == 0 && dx == -1 ) {
-        x = width-2;
-        xpix = x*tilesize;
-        xfloat = (float)xpix;
+    else if ( pixelPos.getX() == 0 && direction.getX() == -1 ) {
+        tilePos.setX(width-2);
+        pixelPos.setX(tilePos.getX()*tilesize);
+        xfloat = (float)pixelPos.getX();
     }
-    if ( y == height-2 && dy == 1 ) {
-        y = 0;
-        ypix = 0;
+    if ( tilePos.getY() == height-2 && direction.getY() == 1 ) {
+        tilePos.setY(0);
+        pixelPos.setY(0);
         yfloat = 0;
     }
-    else if ( ypix == 0 && dy == -1 ) {
-        y = height-2;
-        ypix = y*tilesize;
-        yfloat = (float)ypix;
+    else if ( pixelPos.getY() == 0 && direction.getY() == -1 ) {
+        tilePos.setY(height-2);
+        pixelPos.setY(tilePos.getY()*tilesize);
+        yfloat = (float)pixelPos.getY();
     }
 
 
     //remember old coords for adjustments at end
 
-    oldx=xpix;
-    oldy=ypix;
+    oldx=pixelPos.getX();
+    oldy=pixelPos.getY();
 
     // if at tile beginning
     // and we haven't processed this location yet
-    if ( xpix % tilesize == 0 && ypix % tilesize == 0 &&
-         !(xpix == xpix_at_last_dirchange && ypix == ypix_at_last_dirchange) ) {
+    if ( pixelPos.getX() % tilesize == 0 && pixelPos.getY() % tilesize == 0 &&
+         !(pixelPos.getX() == pixelPosAtLastDirChange.getX() && pixelPos.getY() == pixelPosAtLastDirChange.getY()) ) {
 
         //init dirClear array
         //to the right
         if ( gateopen ) {
             //right
-            if (collision_ignore_gate( xpix / tilesize + 1, ypix / tilesize ) ) dirClear[1+1][1+0]=0;
+            if (collision_ignore_gate( pixelPos.getX() / tilesize + 1, pixelPos.getY() / tilesize ) ) dirClear[1+1][1+0]=0;
             else dirClear[1+1][1+0]=1;
 
             //left
 
-            if (collision_ignore_gate( xpix / tilesize - 1, ypix / tilesize ) ) dirClear[1-1][1+0]=0;
+            if (collision_ignore_gate( pixelPos.getX() / tilesize - 1, pixelPos.getY() / tilesize ) ) dirClear[1-1][1+0]=0;
             else dirClear[1-1][1+0]=1;
 
             //up
 
-            if (collision_ignore_gate( xpix / tilesize , ypix / tilesize - 1) ) dirClear[1+0][1-1]=0;
+            if (collision_ignore_gate( pixelPos.getX() / tilesize , pixelPos.getY() / tilesize - 1) ) dirClear[1+0][1-1]=0;
             else dirClear[1+0][1-1]=1;
 
             //down
 
-            if (collision_ignore_gate( xpix / tilesize , ypix / tilesize +1) ) dirClear[1+0][1+1]=0;
+            if (collision_ignore_gate( pixelPos.getX() / tilesize , pixelPos.getY() / tilesize +1) ) dirClear[1+0][1+1]=0;
             else dirClear[1+0][1+1]=1;
         }
         else {
             //right
-            if (collision( xpix / tilesize + 1, ypix / tilesize ) ) dirClear[1+1][1+0]=0;
+            if (collision( pixelPos.getX() / tilesize + 1, pixelPos.getY() / tilesize ) ) dirClear[1+1][1+0]=0;
             else dirClear[1+1][1+0]=1;
 
             //left
 
-            if (collision( xpix / tilesize - 1, ypix / tilesize ) ) dirClear[1-1][1+0]=0;
+            if (collision( pixelPos.getX() / tilesize - 1, pixelPos.getY() / tilesize ) ) dirClear[1-1][1+0]=0;
             else dirClear[1-1][1+0]=1;
 
             //up
 
-            if (collision( xpix / tilesize , ypix / tilesize - 1) ) dirClear[1+0][1-1]=0;
+            if (collision( pixelPos.getX() / tilesize , pixelPos.getY() / tilesize - 1) ) dirClear[1+0][1-1]=0;
             else dirClear[1+0][1-1]=1;
 
             //down
 
-            if (collision( xpix / tilesize , ypix / tilesize +1) ) dirClear[1+0][1+1]=0;
+            if (collision( pixelPos.getX() / tilesize , pixelPos.getY() / tilesize +1) ) dirClear[1+0][1+1]=0;
             else dirClear[1+0][1+1]=1;
         }
 
         // switch gateopen status if current tile is a gate tile.
 
-        if ( map[ y*width + x] == 2 ) gateopen = !gateopen;
+        if ( map[ tilePos.getY()*width + tilePos.getX()] == 2 ) gateopen = !gateopen;
 
         // if a direction perpendicular to current direction is clear
         // OR current direction is blocked ( = dead end)
         // OR if dx == dy (starting state) set cont flag to 1.
         // cont flag determines whether new dir will be calculated or not
 
-        if ( dirClear[1+dy][1+dx] || dirClear[1-dy][1-dx] || !dirClear[1+dx][1+dy] || dx == dy ) cont = 1;
+        if ( dirClear[1+direction.getY()][1+direction.getX()] || dirClear[1-direction.getY()][1-direction.getX()] || !dirClear[1+direction.getX()][1+direction.getY()] || direction.getX() == direction.getY() ) cont = 1;
 
         // if cont == 1, calc new direction
         // newdir cannot be the opposite of curdir UNLESS it is the only way.
@@ -816,41 +773,41 @@ void Ghost::Update( int time) {
         else if (cont == 1 && state == 3 ) pathCalcDead();
 
         //store location
-        xpix_at_last_dirchange = xpix;
-        ypix_at_last_dirchange = ypix;
+        pixelPosAtLastDirChange.setX(pixelPos.getX());
+        pixelPosAtLastDirChange.setY(pixelPos.getY());
     }
 
     //MOVEMENT PART STARTS HERE
 
 
     //  dir    *       speed in percent
-    xfloat += ( (float)(time * dx * spdmod) / MOVEMOD );
-    yfloat += ( (float)(time * dy * spdmod) / MOVEMOD );
+    xfloat += ( (float)(time * direction.getX() * spdmod) / MOVEMOD );
+    yfloat += ( (float)(time * direction.getY() * spdmod) / MOVEMOD );
 
     //COORD ADJUSTMENTS
 
-    if ( xfloat > (float)(x+1)*tilesize ) xfloat = (float)(x+1)*tilesize;
-    if ( yfloat > (float)(y+1)*tilesize ) yfloat = (float)(y+1)*tilesize;
+    if ( xfloat > (float)(tilePos.getX()+1)*tilesize ) xfloat = (float)(tilePos.getX()+1)*tilesize;
+    if ( yfloat > (float)(tilePos.getY()+1)*tilesize ) yfloat = (float)(tilePos.getY()+1)*tilesize;
 
-    if ( xfloat < (float)(x)*tilesize && oldx > (float)(x)*tilesize )
-        xfloat = (float)(x)*tilesize;
-    if ( yfloat < (float)(y)*tilesize && oldy > (float)(y)*tilesize)
-        yfloat = (float)(y)*tilesize;
+    if ( xfloat < (float)(tilePos.getX())*tilesize && oldx > (float)(tilePos.getX())*tilesize )
+        xfloat = (float)(tilePos.getX())*tilesize;
+    if ( yfloat < (float)(tilePos.getY())*tilesize && oldy > (float)(tilePos.getY())*tilesize)
+        yfloat = (float)(tilePos.getY())*tilesize;
 
     //COORD UPDATES
 
-    xpix=(int)xfloat;
-    ypix=(int)yfloat;
+    pixelPos.setX((int)xfloat);
+    pixelPos.setY((int)yfloat);
 
-    x= xpix/tilesize;
-    y=ypix/tilesize;
+    tilePos.setX(pixelPos.getX()/tilesize);
+    tilePos.setY(pixelPos.getY()/tilesize);
 }
 void Ghost::Draw() {
 
     SDL_Rect pos;
 
-    pos.x=xpix;
-    pos.y=ypix;
+    pos.x=pixelPos.getX();
+    pos.y=pixelPos.getY();
     pos.h=GHOSTSIZE;
     pos.w=GHOSTSIZE;
 
@@ -888,13 +845,13 @@ void Ghost::Draw() {
         SDL_BlitSurface(ghostEl[4].get(),NULL,buf.get(),&pos);
     }
 
-    if (dx == 1)
+    if (direction.getX() == 1)
         pos.x=pos.x+2;
-    else if (dx == -1)
+    else if (direction.getX() == -1)
         pos.x=pos.x-2;
-    else if (dy == -1)
+    else if (direction.getY() == -1)
         pos.y=pos.y-2;
-    else if (dy == 1)
+    else if (direction.getY() == 1)
         pos.y=pos.y+2;
 
     //draw eyes
@@ -944,14 +901,12 @@ bool Ghost::LoadTextures(std::string path) {
 Ghost::Ghost(shared_ptr<SDL_Surface> buf, int os, int ix, int iy, int ispdmod, int itilesize,
 			 int iheight, int iwidth, int *imap, std::string fn)
 :   Object( buf, os),
-    x(ix),
-    y(iy),
-    dx(0),
-    dy(0),
-    nextdx(0),
-    nextdy(0),
-    xpix_at_last_dirchange(1),
-    ypix_at_last_dirchange(1),
+    tilePos(ix, iy),
+    pixelPos(ix * itilesize, iy * itilesize),
+    direction(0, 0),
+    nextDirection(0, 0),
+    target(0, 0),
+    pixelPosAtLastDirChange(1, 1),
     spdmod(ispdmod),
     tilesize(itilesize),
     height(iheight),
@@ -968,11 +923,8 @@ Ghost::Ghost(shared_ptr<SDL_Surface> buf, int os, int ix, int iy, int ispdmod, i
 
     filename = fn;
 
-    xpix=x*tilesize;
-    ypix=y*tilesize;
-
-    xfloat=(float)xpix;
-    yfloat=(float)ypix;
+    xfloat=(float)pixelPos.getX();
+    yfloat=(float)pixelPos.getY();
 
     defspeed=spdmod;
 

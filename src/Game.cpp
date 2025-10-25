@@ -9,6 +9,7 @@
 
 
 #include "Game.h"
+#include "Position.h"
 
 #define PAC	1
 #define GHOST1 2
@@ -631,10 +632,9 @@ void Game::logicGame() {
 
         for (i=0; i< 4; i++) {
             //if (pacX == baddieX[i] && pacY == baddieY[i] ) {
-            if (	pacXpix > ghostXpix[i] - 10  &&
-                        pacXpix < ghostXpix[i] + 10  &&
-                        pacYpix > ghostYpix[i] - 10  &&
-                        pacYpix < ghostYpix[i] + 10  ) {
+            Position pacPos(pacXpix, pacYpix);
+            Position ghostPos(ghostXpix[i], ghostYpix[i]);
+            if (pacPos.distanceTo(ghostPos) < 20) {
 
                 if ( ((Ghost*)objects[i+2])->getState() == 0 )	{
 
