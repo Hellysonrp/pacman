@@ -17,7 +17,33 @@
 
 using boost::shared_ptr;
 
-#define NUMOFMAPTEX 10
+// BckgrObj constants
+constexpr int NUM_OF_MAP_TEXTURES = 10;
+constexpr int TILE_SIZE = 20;
+constexpr int TILE_OFFSET = 10;
+constexpr int ALPHA_OPAQUE = 255;
+
+// Map tile types
+enum MapTileType {
+    EMPTY = 0,
+    HORIZONTAL_WALL = 1,
+    GHOST_DOOR = 2,
+    UPPER_LEFT_CORNER = 3,
+    UPPER_RIGHT_CORNER = 4,
+    LOWER_RIGHT_CORNER = 5,
+    LOWER_LEFT_CORNER = 6,
+    LEFT_T = 7,
+    RIGHT_T = 8,
+    STUB = 9
+};
+
+// Object map types
+enum ObjectMapType {
+    OBJ_EMPTY = 0,
+    SMALL_DOT = 1,
+    LARGE_DOT = 2,
+    FRUIT = 3
+};
 
 class BckgrObj :
 	public Object
@@ -43,9 +69,9 @@ public:
 
 private:
     shared_ptr<SDL_Surface>
-            mapEl[NUMOFMAPTEX],
-            objEl[NUMOFMAPTEX],
-            mapElRot[NUMOFMAPTEX][3];
+            mapEl[NUM_OF_MAP_TEXTURES],
+            objEl[NUM_OF_MAP_TEXTURES],
+            mapElRot[NUM_OF_MAP_TEXTURES][3];
 
     int
             objcounter,

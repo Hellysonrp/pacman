@@ -22,7 +22,7 @@ void BckgrObj::Draw(int ix, int iy, int obj, int type, int alp) {
 
     pos.x=ix;
     pos.y=iy;
-    pos.h=pos.w=20;
+    pos.h=pos.w=TILE_SIZE;
 
     if (type == 1) {
         SDL_SetAlpha(objEl[obj].get(),SDL_SRCALPHA|SDL_RLEACCEL,alp);
@@ -35,7 +35,7 @@ void BckgrObj::Draw(int ix, int iy, int obj, int type, int alp) {
 }
 
 void BckgrObj::Draw(int ix, int iy, int obj, int type) {
-    Draw(ix,iy,obj,type,255);
+    Draw(ix,iy,obj,type,ALPHA_OPAQUE);
 }
 
 void BckgrObj::setFruitAlpha(int a) {
@@ -65,90 +65,90 @@ void BckgrObj::Draw() {
 
             pos.x=i*settings.tilesize;
             pos.y=j*settings.tilesize;
-            pos.h=20;
-            pos.w=20;
+            pos.h=TILE_SIZE;
+            pos.w=TILE_SIZE;
 
-            if (map[j*width+i]==1	&&	// horizontal line
-                ( map[j*width+i+1] != 0 || i == width-1 ) &&
-                ( map[j*width+i-1] != 0 || i == 0 ) ) {
+            if (map[j*width+i]==HORIZONTAL_WALL	&&	// horizontal line
+                ( map[j*width+i+1] != EMPTY || i == width-1 ) &&
+                ( map[j*width+i-1] != EMPTY || i == 0 ) ) {
                 SDL_SetAlpha(mapEl[1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[1].get(), NULL, buf.get(), &pos );
             }
 
-            else if (map[j*width+i]==1)	{	// vertical line
+            else if (map[j*width+i]==HORIZONTAL_WALL)	{	// vertical line
                 SDL_SetAlpha(mapElRot[1][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[1][0].get(), NULL, buf.get(), &pos);
             }
 
-            else if (map[j*width+i]==2 &&		//ghost door
-                     map[j*width+i + 1] != 0 &&
-                     map[j*width+i - 1] != 0) {
+            else if (map[j*width+i]==GHOST_DOOR &&		//ghost door
+                     map[j*width+i + 1] != EMPTY &&
+                     map[j*width+i - 1] != EMPTY) {
                 SDL_SetAlpha(mapEl[2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[2].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==2)	{	// vertical ghost door
+            else if (map[j*width+i]==GHOST_DOOR)	{	// vertical ghost door
                 SDL_SetAlpha(mapElRot[2][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[2][0].get(), NULL, buf.get(), &pos);
             }
 
-            else if (map[j*width+i]==3) {		//upper left corner
+            else if (map[j*width+i]==UPPER_LEFT_CORNER) {		//upper left corner
                 SDL_SetAlpha(mapEl[3].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[3].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==4) {		// upper right corner
+            else if (map[j*width+i]==UPPER_RIGHT_CORNER) {		// upper right corner
                 SDL_SetAlpha(mapEl[4].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[4].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==5) {		// lower  right corner
+            else if (map[j*width+i]==LOWER_RIGHT_CORNER) {		// lower  right corner
                 SDL_SetAlpha(mapEl[5].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[5].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==6) {		// lower left corner
+            else if (map[j*width+i]==LOWER_LEFT_CORNER) {		// lower left corner
                 SDL_SetAlpha(mapEl[6].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[6].get(), NULL, buf.get(), &pos);
             }
 
-            else if (map[j*width+i]==7 && 		// left T
-                     ( map[j*width+i-1]==0 || i == 0 ) ) {
+            else if (map[j*width+i]==LEFT_T && 		// left T
+                     ( map[j*width+i-1]==EMPTY || i == 0 ) ) {
                 SDL_SetAlpha(mapEl[7].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[7].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==7)	{	// upside down T
+            else if (map[j*width+i]==LEFT_T)	{	// upside down T
                 SDL_SetAlpha(mapElRot[7][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[7][0].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==8 &&		// right T
-                     ( map[j*width+i+1]==0 || i == width-1 ) ) {
+            else if (map[j*width+i]==RIGHT_T &&		// right T
+                     ( map[j*width+i+1]==EMPTY || i == width-1 ) ) {
                 SDL_SetAlpha(mapEl[8].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[8].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==8)	{	// upright T
+            else if (map[j*width+i]==RIGHT_T)	{	// upright T
                 SDL_SetAlpha(mapElRot[8][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[8][0].get(), NULL, buf.get(), &pos);
             }
 
-            else if (map[j*width+i]==9 &&
-                     map[j*width+i-1] != 0 &&
-                     map[j*width+i-1] != 2 &&
+            else if (map[j*width+i]==STUB &&
+                     map[j*width+i-1] != EMPTY &&
+                     map[j*width+i-1] != GHOST_DOOR &&
                      i > 0 )	 {//right stub
                 SDL_SetAlpha(mapEl[9].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapEl[9].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==9 &&
-                     map[j*width+i+1] != 0 &&
-                     map[j*width+i+1] != 2 &&
+            else if (map[j*width+i]==STUB &&
+                     map[j*width+i+1] != EMPTY &&
+                     map[j*width+i+1] != GHOST_DOOR &&
                      i < width-1) {	// left stub
                 SDL_SetAlpha(mapElRot[9][1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[9][1].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==9 &&
-                     map[(j+1)*width+i] != 0 &&
-                     map[(j+1)*width+i] != 2 &&
+            else if (map[j*width+i]==STUB &&
+                     map[(j+1)*width+i] != EMPTY &&
+                     map[(j+1)*width+i] != GHOST_DOOR &&
                      j < height -1) {	// upper stub
                 SDL_SetAlpha(mapElRot[9][0].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[9][0].get(), NULL, buf.get(), &pos);
             }
-            else if (map[j*width+i]==9)	{// lower stub
+            else if (map[j*width+i]==STUB)	{// lower stub
                 SDL_SetAlpha(mapElRot[9][2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(mapElRot[9][2].get(), NULL, buf.get(), &pos);
             }
@@ -160,22 +160,22 @@ void BckgrObj::Draw() {
     for (j=0;j<height;j++) {
         for (i=0; i<width; i++) {
 
-            pos.x=i*settings.tilesize+10; // +10 are needed for correct placement
-            pos.y=j*settings.tilesize+10;
-            pos.h=20;
-            pos.w=20;
+            pos.x=i*settings.tilesize+TILE_OFFSET; // +TILE_OFFSET are needed for correct placement
+            pos.y=j*settings.tilesize+TILE_OFFSET;
+            pos.h=TILE_SIZE;
+            pos.w=TILE_SIZE;
 
-            if (objmap[j*width+i]==1) {
+            if (objmap[j*width+i]==SMALL_DOT) {
                 SDL_SetAlpha(objEl[1].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(objEl[1].get(), NULL, buf.get(), &pos);
                 objcounter++;
             }
-            if (objmap[j*width+i]==2) {	// BIG DOTS!
+            if (objmap[j*width+i]==LARGE_DOT) {	// BIG DOTS!
                 SDL_SetAlpha(objEl[2].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
                 SDL_BlitSurface(objEl[2].get(), NULL, buf.get(), &pos);
                 objcounter++;
             }
-            if (objmap[j*width+i]==3 && specialspawned && !specialeaten) {	// fruit
+            if (objmap[j*width+i]==FRUIT && specialspawned && !specialeaten) {	// fruit
                 SDL_SetAlpha(objEl[3].get(),SDL_SRCALPHA,fruitalpha);
                 SDL_BlitSurface(objEl[3].get(), NULL, buf.get(), &pos);
                 objcounter++;
@@ -189,14 +189,14 @@ void BckgrObj::Draw() {
 bool BckgrObj::LoadTextures(std::string path) {
 
     int i;
-    std::string num[NUMOFMAPTEX];
+    std::string num[NUM_OF_MAP_TEXTURES];
     SDL_PixelFormat *fmt;
 
-    for (i=0;i<NUMOFMAPTEX;i++)
+    for (i=0;i<NUM_OF_MAP_TEXTURES;i++)
         num[i]='0'+i;
 
     try {
-        for (i=0;i<NUMOFMAPTEX;i++) {
+        for (i=0;i<NUM_OF_MAP_TEXTURES;i++) {
             mapEl[i].reset(IMG_Load((path + "m" + num[i] + ".png").c_str()), SDL_FreeSurface);
             if ( mapEl[i] == NULL )
                 throw Error(num[i] + "Failed to load map texture");
@@ -241,7 +241,7 @@ bool BckgrObj::LoadTextures(std::string path) {
 BckgrObj::BckgrObj( shared_ptr<SDL_Surface> buffer, int os)
     :	Object( buffer, os),
     objcounter(0),
-    fruitalpha(255),
+    fruitalpha(ALPHA_OPAQUE),
     specialspawned(false),
     specialeaten(false)
 {
