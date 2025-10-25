@@ -9,7 +9,13 @@
 
 
 #pragma once
-#include "Main.h"
+#include <SDL/SDL.h>
+#include <SDL/SDL_ttf.h>
+#include <iostream>
+#include "Log.h"
+#include "Settings.h"
+#include "Error.h"
+#include "Constants.h"
 #include <boost/shared_ptr.hpp>
 
 using boost::shared_ptr;

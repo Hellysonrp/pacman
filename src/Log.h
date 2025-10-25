@@ -9,7 +9,14 @@
 
 
 #pragma once
-#include "Main.h"
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <cstdlib>
+
+#include "Constants.h"
+#include "App.h"
+#include "Error.h"
 
 class Log
 {

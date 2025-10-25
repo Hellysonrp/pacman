@@ -11,8 +11,14 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
+#include <SDL/SDL_mixer.h>
+#include <string>
+#include <iostream>
 
-#include "Main.h"
+#include "Constants.h"
+#include "App.h"
+#include "Log.h"
+#include "Error.h"
 
 using boost::shared_ptr;
 

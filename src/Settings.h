@@ -13,7 +13,12 @@
 #include <string>
 #include <cstdlib>
 #include <sys/stat.h>
-#include "Main.h"
+#include <fstream>
+#include <iostream>
+
+#include "Constants.h"
+#include "Log.h"
+#include "Error.h"
 
 using std::string;
 

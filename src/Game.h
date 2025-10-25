@@ -11,9 +11,16 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
+#include <SDL/SDL.h>
+#include <SDL/SDL_ttf.h>
+#include <SDL/SDL_image.h>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include "Sounds.h"
-#include "Main.h"
+#include "Constants.h"
 #include "BckgrObj.h"
 #include "Object.h"
 #include "Pacman.h"

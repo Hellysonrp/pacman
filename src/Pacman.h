@@ -11,9 +11,17 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
+#include <SDL/SDL.h>
+#include <SDL/SDL_image.h>
+#include <SDL/SDL_rotozoom.h>
+#include <string>
+#include <iostream>
 
-#include "Main.h"
+#include "Constants.h"
 #include "Object.h"
+#include "Log.h"
+#include "App.h"
+#include "Error.h"
 
 using boost::shared_ptr;
 

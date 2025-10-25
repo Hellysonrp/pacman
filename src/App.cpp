@@ -9,6 +9,7 @@
 
 
 #include "App.h"
+#include "Sounds.h"
 
 extern Log logtxt;
 extern Settings settings;
