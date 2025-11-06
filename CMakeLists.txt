@@ -184,16 +184,24 @@ if(PKG_MANAGER)
             RESULT_VARIABLE UPDATE_RESULT
         )
         
+        set(FAILED_PACKAGES)
         foreach(PKG ${MISSING_PACKAGES})
             message(STATUS "Installing ${PKG}...")
             execute_process(
                 COMMAND ${PKG_INSTALL_CMD} ${PKG}
                 RESULT_VARIABLE INSTALL_RESULT
+                OUTPUT_QUIET
+                ERROR_QUIET
             )
             if(NOT INSTALL_RESULT EQUAL 0)
-                message(WARNING "Failed to install ${PKG}")
+                list(APPEND FAILED_PACKAGES ${PKG})
+                message(WARNING "Package ${PKG} not available in package manager. Will try to find installed version.")
             endif()
         endforeach()
+        
+        if(FAILED_PACKAGES)
+            message(STATUS "Some packages may need manual installation: ${FAILED_PACKAGES}")
+        endif()
     else()
         message(STATUS "All dependencies are installed")
     endif()
