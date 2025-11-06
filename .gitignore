@@ -6,4 +6,5 @@ pacman_v4
 pacman
 *.pro
 *.pro.user
-Makefile
+build/*
+CMakeCache.txt
