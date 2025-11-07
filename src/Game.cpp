@@ -524,10 +524,15 @@ void Game::logicEnterHscore() {
             else name[hscoreselection]++;
             break;
         case ENTER :
-            hscore.add(name, score);
+            hscore.add(name, lastRecordedScore);
             hscore.save();
-
-            setState( STATE_VIEW_HSCORE) ;
+            awaitingHighscoreEntry = false;
+            lastRecordedName = name;
+            rankingFromHotkey = false;
+            hasRecentGameOver = false; // Ao confirmar o nome reiniciamos o ciclo de jogo imediatamente.
+            gamestarted = false; // Garante que a próxima partida possa iniciar sem depender de pressionar 'N'.
+            previousState = STATE_STOPPED;
+            setState( STATE_STOPPED );
         default :
              break;
         }
@@ -797,7 +802,10 @@ void Game::renderEnterHscore() {
         }
         if ( specialeaten ) objects[0]->Draw( settings.fieldwidth*settings.tilesize - 40 -10, settings.fieldheight*settings.tilesize +15 );
 
-        ostr << "level: " << level << " score: " << score;
+        if (hasRecentGameOver)
+            ostr << "PONTUAÇÃO FINAL: " << lastRecordedScore;
+        else
+            ostr << "level: " << level << " score: " << score;
 
         txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
