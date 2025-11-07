@@ -134,6 +134,9 @@ private:
             hscoreselection;
 
     unsigned int
+            lastRecordedScore;
+
+    unsigned int
             soundcounter,
             time,
             oldtime,
@@ -154,10 +157,16 @@ private:
             boostavailable,
             levelcleared,
             showfps,
-            renderisbusy;
+            renderisbusy,
+            rankingFromHotkey,
+            awaitingHighscoreEntry,
+            hasRecentGameOver;
+
+    int previousState;
     std::string
             num[10],
-            name;
+            name,
+            lastRecordedName;
 
     hScore
             hscore;

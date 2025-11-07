@@ -1060,6 +1060,12 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
         namecol[1] = 150;
         namecol[2] = 150;
         hscoreselection = 0;
+        lastRecordedScore = 0;
+        lastRecordedName.clear();
+        hasRecentGameOver = false;
+        awaitingHighscoreEntry = false;
+        rankingFromHotkey = false;
+        previousState = STATE_STOPPED;
 
 
         if ( ispaused )
@@ -1449,6 +1455,7 @@ Game::Game()
     specialspawntime(0),
     level(1),
     hscoreselection(0),
+    lastRecordedScore(0),
     soundcounter(0),
     inputwaiting(false),
     gamestarted(false),
@@ -1459,7 +1466,11 @@ Game::Game()
     ispaused(false),
     isboosted(false),
     showfps(false),
-    renderisbusy(false)
+    renderisbusy(false),
+    rankingFromHotkey(false),
+    awaitingHighscoreEntry(false),
+    hasRecentGameOver(false),
+    previousState(STATE_STOPPED)
 
 {
     int i;
@@ -1482,6 +1493,7 @@ Game::Game()
     namecol[0] = 255;
     namecol[1] = 150;
     namecol[2] = 150;
+    lastRecordedName.clear();
 }
 
 Game::~Game()
