@@ -10,6 +10,7 @@
 
 #include "Game.h"
 #include "Position.h"
+#include <vector>
 
 #define PAC	1
 #define GHOST1 2
@@ -313,7 +314,20 @@ void Game::handleKeyDown(const SDL_KeyboardEvent& keyEvent) {
         toggleFps();
         break;
     case SDLK_h:
-        setState( STATE_VIEW_HSCORE );
+        if ( state == STATE_ENTER_HSCORE )
+            break;
+
+        if ( state == STATE_VIEW_HSCORE && rankingFromHotkey ) {
+            setState( previousState );
+            rankingFromHotkey = false;
+        }
+        else {
+            previousState = state;
+            rankingFromHotkey = (state != STATE_VIEW_HSCORE);
+            if (rankingFromHotkey)
+                hasRecentGameOver = false;
+            setState( STATE_VIEW_HSCORE );
+        }
         break;
     case SDLK_RETURN:
         processInput(ENTER);
@@ -357,23 +371,24 @@ void Game::renderViewHscore() {
     shared_ptr<SDL_Surface>
             buf = app.getScreen(),
             txt;
-    SDL_Color col;
+    SDL_Color col,
+            highlightCol;
     std::ostringstream ostr, scstr;
-    SDL_Rect rect;
-    int i, sc;
-    std::string nm;
-
-    // TODO: armazenar ranking ordenado para ser desenhado em tela
-    // std::vector<hScore::ScoreEntry> ranking;
+    SDL_Rect rect,
+            entryRect,
+            instructionRect;
+    std::vector<hScore::ScoreEntry> entries = hscore.getEntries();
+    int i;
 
     col.r = col.g = col.b = 255;
+    highlightCol.r = 255;
+    highlightCol.g = 215;
+    highlightCol.b = 0;
 
-    rect.x = settings.fieldwidth*settings.tilesize / 2 - 200;
-    rect.w = 400;
-    rect.y = settings.fieldheight*settings.tilesize / 2 - 200;
-    rect.h = 50;
-
-    // TODO: obter lista ordenada de pontuações para exibir ranking
+    rect.x = settings.fieldwidth*settings.tilesize / 2 - 220;
+    rect.w = 440;
+    rect.y = settings.fieldheight*settings.tilesize / 2 - 220;
+    rect.h = 40;
 
     try {
         // DRAW FIELD + SPRITES
@@ -387,51 +402,90 @@ void Game::renderViewHscore() {
         }
         if ( specialeaten ) objects[0]->Draw( settings.fieldwidth*settings.tilesize - 40 -10, settings.fieldheight*settings.tilesize +10 );
 
-        ostr << "level: " << level << " score: " << score;
+        if (hasRecentGameOver)
+            ostr << "PONTUAÇÃO FINAL: " << lastRecordedScore;
+        else
+            ostr << "level: " << level << " score: " << score;
 
         txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
 
         SDL_BlitSurface(txt.get(),NULL,buf.get(),&scorebox);
 
-        // DRAW HIGHSCORES
-
+        if (hasRecentGameOver) {
+            ostr.str("");
+            ostr << "GAME OVER - PONTOS: " << lastRecordedScore;
+            txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
+            if (!txt) throw Error("DrawText failed");
+            SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+            rect.y += 50;
+        }
 
         txt.reset(TTF_RenderText_Solid(font,"HIGHSCORES:",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
 
         SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+        rect.y += 40;
+
+        entryRect.x = settings.fieldwidth * settings.tilesize / 2 - 200;
+        entryRect.w = 60;
+        entryRect.y = rect.y;
+        entryRect.h = 40;
 
         for (i=0;i<MAXENTRIES;i++) {
+            std::ostringstream positionStream;
+            SDL_Color activeColor = col;
 
-            // TODO: montar texto com posição e nome do jogador
-            nm= "";
-            nm=hscore.getName(i);
-            sc=hscore.getScore(i);
+            if (i < static_cast<int>(entries.size())) {
+                const hScore::ScoreEntry& entry = entries[i];
+                bool highlightEntry = !lastRecordedName.empty() &&
+                        entry.playerName == lastRecordedName && entry.playerScore == lastRecordedScore;
+                // Mantém o destaque do recorde mais recente mesmo depois que a próxima partida já estiver preparada.
+                if (highlightEntry) {
+                    activeColor = highlightCol;
+                }
 
-            rect.x = settings.fieldwidth * settings.tilesize / 4;
-            rect.w = 200;
-            rect.y = 200 + i*50;
-            rect.h = 50;
-
-            if ( nm != "" ) {
-                txt.reset(TTF_RenderText_Solid(font,nm.c_str(),col), SDL_FreeSurface);
+                positionStream << (i+1) << "º";
+                txt.reset(TTF_RenderText_Solid(font,positionStream.str().c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
+                SDL_BlitSurface(txt.get(),NULL,buf.get(),&entryRect);
 
-                SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+                SDL_Rect nameRect = entryRect;
+                nameRect.x += 70;
+                nameRect.w = 160;
+                std::string nameToShow = entry.playerName.empty() ? "---" : entry.playerName;
+                txt.reset(TTF_RenderText_Solid(font,nameToShow.c_str(),activeColor), SDL_FreeSurface);
+                if (!txt) throw Error("DrawText failed");
+                SDL_BlitSurface(txt.get(),NULL,buf.get(),&nameRect);
+
+                SDL_Rect scoreRect = entryRect;
+                scoreRect.x += 240;
+                scstr.str("");
+                scstr << entry.playerScore;
+                txt.reset(TTF_RenderText_Solid(font,scstr.str().c_str(),activeColor), SDL_FreeSurface);
+                if (!txt) throw Error("DrawText failed");
+                SDL_BlitSurface(txt.get(),NULL,buf.get(),&scoreRect);
             }
 
-            rect.x = settings.fieldwidth * settings.tilesize / 4 + 200;
+            entryRect.y += 40;
+        }
 
-            // TODO: renderizar pontuação do jogador correspondente
-            scstr.str("");
-            if ( sc ) {
-                scstr << sc;
-                txt.reset(TTF_RenderText_Solid(font,scstr.str().c_str(),col), SDL_FreeSurface);
-                if (!txt) throw Error("DrawText failed");
+        instructionRect.x = settings.fieldwidth * settings.tilesize / 2 - 220;
+        instructionRect.w = 440;
+        instructionRect.y = entryRect.y + 20;
+        instructionRect.h = 40;
 
-                SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
-            }
+        if (hasRecentGameOver) {
+            const char* restartMsg = "Pressione N para iniciar uma nova partida";
+            txt.reset(TTF_RenderText_Solid(font,restartMsg,col), SDL_FreeSurface);
+            if (!txt) throw Error("DrawText failed");
+            SDL_BlitSurface(txt.get(),NULL,buf.get(),&instructionRect);
+        }
+        else if (rankingFromHotkey) {
+            const char* backMsg = "Pressione H novamente para voltar";
+            txt.reset(TTF_RenderText_Solid(font,backMsg,col), SDL_FreeSurface);
+            if (!txt) throw Error("DrawText failed");
+            SDL_BlitSurface(txt.get(),NULL,buf.get(),&instructionRect);
         }
 
     }
@@ -523,10 +577,15 @@ void Game::logicEnterHscore() {
             else name[hscoreselection]++;
             break;
         case ENTER :
-            hscore.add(name, score);
+            hscore.add(name, lastRecordedScore);
             hscore.save();
-
-            setState( STATE_VIEW_HSCORE) ;
+            awaitingHighscoreEntry = false;
+            lastRecordedName = name;
+            rankingFromHotkey = false;
+            hasRecentGameOver = false; // Ao confirmar o nome reiniciamos o ciclo de jogo imediatamente.
+            gamestarted = false; // Garante que a próxima partida possa iniciar sem depender de pressionar 'N'.
+            previousState = STATE_STOPPED;
+            setState( STATE_STOPPED );
         default :
              break;
         }
@@ -646,8 +705,30 @@ void Game::logicGame() {
                     SDL_Delay(1000);
 
                     if ( lives == 0) {
-                        if (hscore.onlist(score) ) setState( STATE_ENTER_HSCORE );
-                        else gameInit();
+                        unsigned int finalScore = static_cast<unsigned int>(score); // Captura antes do reset provocado por gameInit().
+                        bool qualifiesForRanking = hscore.onlist(finalScore);
+
+                        gameInit();
+
+                        hasRecentGameOver = true;
+                        lastRecordedScore = finalScore;
+                        rankingFromHotkey = false;
+                        gamestarted = false;
+
+                        if (qualifiesForRanking) {
+                            awaitingHighscoreEntry = true;
+                            name = "AAA";
+                            namecol[0] = 255;
+                            namecol[1] = 150;
+                            namecol[2] = 150;
+                            lastRecordedName.clear();
+                            setState( STATE_ENTER_HSCORE );
+                        }
+                        else {
+                            awaitingHighscoreEntry = false;
+                            lastRecordedName.clear();
+                            setState( STATE_VIEW_HSCORE );
+                        }
                         return;
                     }
                     else {
@@ -774,7 +855,10 @@ void Game::renderEnterHscore() {
         }
         if ( specialeaten ) objects[0]->Draw( settings.fieldwidth*settings.tilesize - 40 -10, settings.fieldheight*settings.tilesize +15 );
 
-        ostr << "level: " << level << " score: " << score;
+        if (hasRecentGameOver)
+            ostr << "PONTUAÇÃO FINAL: " << lastRecordedScore;
+        else
+            ostr << "level: " << level << " score: " << score;
 
         txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
@@ -1059,6 +1143,12 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
         namecol[1] = 150;
         namecol[2] = 150;
         hscoreselection = 0;
+        lastRecordedScore = 0;
+        lastRecordedName.clear();
+        hasRecentGameOver = false;
+        awaitingHighscoreEntry = false;
+        rankingFromHotkey = false;
+        previousState = STATE_STOPPED;
 
 
         if ( ispaused )
@@ -1268,10 +1358,9 @@ void Game::processInput(int k, int ix, int iy) {
         mouseY = iy;
     }
 
-    if ( !gamestarted && !ispaused ) {
+    if (!gamestarted && !ispaused && (state == STATE_STOPPED || state == STATE_GAME)) {
         gamestarted = true;
-        if ( state == STATE_STOPPED || state == STATE_GAME )
-            setState( STATE_GAME );
+        setState( STATE_GAME ); // Evita marcar o jogo como iniciado durante navegação em outras telas (ex.: ranking).
     }
 }
 
@@ -1448,6 +1537,7 @@ Game::Game()
     specialspawntime(0),
     level(1),
     hscoreselection(0),
+    lastRecordedScore(0),
     soundcounter(0),
     inputwaiting(false),
     gamestarted(false),
@@ -1458,7 +1548,11 @@ Game::Game()
     ispaused(false),
     isboosted(false),
     showfps(false),
-    renderisbusy(false)
+    renderisbusy(false),
+    rankingFromHotkey(false),
+    awaitingHighscoreEntry(false),
+    hasRecentGameOver(false),
+    previousState(STATE_STOPPED)
 
 {
     int i;
@@ -1481,6 +1575,7 @@ Game::Game()
     namecol[0] = 255;
     namecol[1] = 150;
     namecol[2] = 150;
+    lastRecordedName.clear();
 }
 
 Game::~Game()
