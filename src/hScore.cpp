@@ -75,7 +75,7 @@ bool ensureDirectory(const std::string& path) {
 }
 
 std::vector<std::string> buildSearchPaths() {
-    // Procura arquivos nas mesmas pastas utilizadas para mapas, priorizando a cópia na pasta do usuário.
+    // FIXME: Procura arquivos nas mesmas pastas utilizadas para mapas, priorizando a cópia na pasta do usuário.
     std::vector<std::string> paths;
     if (const char* home = std::getenv("HOME")) {
         paths.emplace_back(std::string(home) + "/" HOME_CONF_PATH);
@@ -168,7 +168,6 @@ int hScore::load() {
     }
 
     if (!file) {
-        // Reaproveita a lógica de busca para encontrar o ranking salvo junto aos mapas instalados.
         resolvedFilename = resolveExistingPath();
 
         if (!resolvedFilename.empty()) {
@@ -199,11 +198,6 @@ int hScore::load() {
     bool parsed = false;
 
     if (!data.empty()) {
-        if (data.find('\0') != std::string::npos) {
-            // Mantém compatibilidade com a antiga gravação em bloco binário separada por NUL.
-            parsed = loadLegacy(data);
-        }
-
         if (!parsed) {
             parsed = loadPlaintext(data);
         }
@@ -252,7 +246,6 @@ int hScore::save() {
         return 1;
     }
 
-    // Persistimos no formato texto para facilitar a depuração e evitar sobrescrever registros antigos.
     for (const auto& entry : entries) {
         if (hasContent(entry)) {
             file << entry.playerName << ' ' << entry.playerScore << '\n';
@@ -282,7 +275,7 @@ bool hScore::onlist(unsigned int sc) const {
 void hScore::add(std::string n, unsigned int sc) {
     ScoreEntry sanitized{normalizeName(n), sc};
 
-    // Mantemos apenas entradas significativas para evitar preencher o ranking com valores vazios.
+    // Manter apenas entradas significativas para evitar preencher o ranking com valores vazios.
     if (!hasContent(sanitized)) {
         return;
     }
@@ -354,39 +347,6 @@ bool hScore::loadPlaintext(const std::string& data) {
     return parsedAny;
 }
 
-bool hScore::loadLegacy(const std::string& data) {
-    size_t pos = 0;
-    bool parsedAny = false;
-
-    while (pos < data.size() && entries.size() < MAXENTRIES) {
-        if (pos + 3 > data.size()) {
-            break;
-        }
-
-        std::string nameChunk = data.substr(pos, 3);
-        pos += 3;
-
-        if (pos < data.size() && data[pos] == '\0') {
-            ++pos;
-        }
-
-        size_t remaining = data.size() - pos;
-        if (remaining == 0) {
-            break;
-        }
-
-        size_t scoreWidth = std::min<size_t>(8, remaining);
-        std::string scoreChunk = data.substr(pos, scoreWidth);
-        pos += scoreWidth;
-
-        unsigned long value = std::strtoul(scoreChunk.c_str(), nullptr, 10);
-        entries.push_back({normalizeName(nameChunk), value});
-        parsedAny = true;
-    }
-
-    return parsedAny;
-}
-
 std::string hScore::resolveExistingPath() const {
     if (filename.empty()) {
         return {};
@@ -426,7 +386,7 @@ std::string hScore::resolveWritablePath() const {
             continue;
         }
 
-        // Garante que gravaremos na cópia instalada do nível ao invés da pasta atual do executável.
+        // Garante que vai ser gravado na cópia instalada do nível ao invés da pasta atual do executável.
         if (ensureDirectory(candidate.substr(0, slashPos))) {
             return candidate;
         }
