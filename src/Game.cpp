@@ -1358,10 +1358,9 @@ void Game::processInput(int k, int ix, int iy) {
         mouseY = iy;
     }
 
-    if ( !gamestarted && !ispaused ) {
+    if (!gamestarted && !ispaused && (state == STATE_STOPPED || state == STATE_GAME)) {
         gamestarted = true;
-        if ( state == STATE_STOPPED || state == STATE_GAME )
-            setState( STATE_GAME );
+        setState( STATE_GAME ); // Evita marcar o jogo como iniciado durante navegação em outras telas (ex.: ranking).
     }
 }
 
