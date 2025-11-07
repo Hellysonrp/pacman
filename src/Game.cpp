@@ -647,8 +647,30 @@ void Game::logicGame() {
                     SDL_Delay(1000);
 
                     if ( lives == 0) {
-                        if (hscore.onlist(score) ) setState( STATE_ENTER_HSCORE );
-                        else gameInit();
+                        unsigned int finalScore = static_cast<unsigned int>(score); // Captura antes do reset provocado por gameInit().
+                        bool qualifiesForRanking = hscore.onlist(finalScore);
+
+                        gameInit();
+
+                        hasRecentGameOver = true;
+                        lastRecordedScore = finalScore;
+                        rankingFromHotkey = false;
+                        gamestarted = false;
+
+                        if (qualifiesForRanking) {
+                            awaitingHighscoreEntry = true;
+                            name = "AAA";
+                            namecol[0] = 255;
+                            namecol[1] = 150;
+                            namecol[2] = 150;
+                            lastRecordedName.clear();
+                            setState( STATE_ENTER_HSCORE );
+                        }
+                        else {
+                            awaitingHighscoreEntry = false;
+                            lastRecordedName.clear();
+                            setState( STATE_VIEW_HSCORE );
+                        }
                         return;
                     }
                     else {
