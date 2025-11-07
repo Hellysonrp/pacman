@@ -13,26 +13,19 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <vector>
 
 #define MAXENTRIES 8
 
 
 class hScore
 {
-    // TODO: estruturar ScoreEntry para devolver nome e pontuação juntos
-//     struct ScoreEntry {
-//         std::string playerName;
-//         unsigned long playerScore;
-//     };
-private:
-    std::string
-            name[MAXENTRIES];
-    unsigned long
-            score[MAXENTRIES];
-    char
-            filename[20];
-    // TODO: método interno para ordenar vetores após operações de leitura/adição
 public:
+    struct ScoreEntry {
+        std::string playerName;
+        unsigned long playerScore;
+    };
+
     hScore();
     ~hScore();
 
@@ -49,6 +42,18 @@ public:
     bool onlist(unsigned int) const;
 
     void setfilename(std::string fn);
-    // TODO: disponibilizar ranking completo
-    //     std::vector<ScoreEntry> getRanking() const;
+    std::vector<ScoreEntry> getEntries() const;
+
+private:
+    void sortEntries();
+    void compactEntries();
+    void ensureSize();
+    bool loadPlaintext(const std::string& data);
+    bool loadLegacy(const std::string& data);
+    std::string resolveExistingPath() const;
+    std::string resolveWritablePath() const;
+
+    std::vector<ScoreEntry> entries;
+    std::string filename;
+    std::string resolvedFilename;
 };

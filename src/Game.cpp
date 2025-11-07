@@ -10,6 +10,7 @@
 
 #include "Game.h"
 #include "Position.h"
+#include <vector>
 
 #define PAC	1
 #define GHOST1 2
