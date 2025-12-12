@@ -9,6 +9,7 @@
 
 
 #include "Main.h"
+#include <filesystem>
 
 //////////////////////////////////////////////////////
 //	GLOBAL VARS
@@ -88,7 +89,7 @@ int main( int argc, char** argv ) {
 
     //init settings
     if ( !app.getQuit() ) settings.LoadSettings(SETTINGSFILE);
-    if ( !app.getQuit() ) settings.LoadSettings( (settings.lvlpath[settings.lvlpathcurrent] + CFGFILE) );
+    if ( !app.getQuit() ) settings.LoadSettings( (settings.lvlpath[settings.lvlpathcurrent] / CFGFILE).string() );
 
     //init SDL
     if ( !app.getQuit() ) app.InitApp();
@@ -101,7 +102,7 @@ int main( int argc, char** argv ) {
 
     //set editorpath
     if ( editfile!="" ) {
-        game.setEditorPath("./levels/" + editfile + "/");
+        game.setEditorPath(std::filesystem::path("levels") / editfile);
     }
 
     //init game class

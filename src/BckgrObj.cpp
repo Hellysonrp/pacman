@@ -9,6 +9,7 @@
 
 
 #include "BckgrObj.h"
+#include <filesystem>
 
 extern Log logtxt;
 extern App app;
@@ -180,8 +181,9 @@ bool BckgrObj::LoadTextures(std::string path) {
         num[i]='0'+i;
 
     try {
+        std::filesystem::path basePath(path);
         for (i=0;i<NUM_OF_MAP_TEXTURES;i++) {
-            mapEl[i].reset(IMG_Load((path + "m" + num[i] + ".png").c_str()), SDL_FreeSurface);
+            mapEl[i].reset(IMG_Load((basePath / ("m" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
             if ( mapEl[i] == NULL )
                 throw Error(num[i] + "Failed to load map texture");
 
@@ -195,7 +197,7 @@ bool BckgrObj::LoadTextures(std::string path) {
             }
         }
         for (i=1;i<5;i++) {
-            objEl[i].reset(IMG_Load((path + "o" + num[i] + ".png").c_str()), SDL_FreeSurface);
+            objEl[i].reset(IMG_Load((basePath / ("o" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
             if ( objEl[i] == NULL )
                 throw Error(num[i] + "Failed to load object texture");
 

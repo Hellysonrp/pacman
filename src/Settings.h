@@ -11,6 +11,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <filesystem>
 #include <cstdlib>
 #include <sys/stat.h>
 #include <fstream>
@@ -62,7 +63,7 @@ public:
             lvlpathcurrent,
             skinspathcurrent;
 
-    std::vector<string>
+    std::vector<std::filesystem::path>
             lvlpath,
             skinspath,
             searchpaths;

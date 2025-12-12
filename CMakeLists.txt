@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.31)
 
 project(Pacman)
 
+# Set C++17 standard for std::filesystem
+set(CMAKE_CXX_STANDARD 17)
+
 # Add cmake modules directory
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
@@ -28,6 +31,15 @@ file(GLOB_RECURSE SOUND_FILES src/sound/*)
 
 add_executable(pacman_sdl ${CPP_FILES} ${HEADER_FILES} ${LEVEL_FILES} ${SKIN_FILES} ${SOUND_FILES})
 
+# Calculate relative path from build dir to source dir
+file(RELATIVE_PATH RELATIVE_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Create relative symlinks to resource directories
+file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/levels ${CMAKE_CURRENT_BINARY_DIR}/levels SYMBOLIC)
+file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/skins ${CMAKE_CURRENT_BINARY_DIR}/skins SYMBOLIC)
+file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/sound ${CMAKE_CURRENT_BINARY_DIR}/sound SYMBOLIC)
+file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/arial.ttf ${CMAKE_CURRENT_BINARY_DIR}/arial.ttf SYMBOLIC)
+
 source_group("Source" FILES ${CPP_FILES})
 source_group("Headers" FILES ${HEADER_FILES})
 source_group("Levels" FILES ${LEVEL_FILES})
@@ -46,7 +58,7 @@ if(DEFINED ENV{MSYSTEM})
         set(BOOST_ROOT "/clang64")
     endif()
 endif()
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS filesystem)
 
 # Find SDL libraries
 include(FindSDL)
@@ -54,10 +66,11 @@ find_sdl_libraries()
 
 # Link libraries
 target_link_libraries(pacman_sdl PRIVATE 
-    Boost::boost 
-    ${SDL_LIBRARY} 
-    ${SDL_TTF_LIBRARY} 
-    ${SDL_GFX_LIBRARY} 
-    ${SDL_IMAGE_LIBRARY} 
+    Boost::boost
+    Boost::filesystem
+    ${SDL_LIBRARY}
+    ${SDL_TTF_LIBRARY}
+    ${SDL_GFX_LIBRARY}
+    ${SDL_IMAGE_LIBRARY}
     ${SDL_MIXER_LIBRARY}
 )

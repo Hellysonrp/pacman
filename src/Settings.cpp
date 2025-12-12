@@ -9,38 +9,43 @@
 
 
 #include "Settings.h"
+#include "PathUtils.h"
+#include <filesystem>
 
 extern Log logtxt;
 
 void Settings::setPath(int mode,std::string str) {
     switch (mode) {
-    case MODE_LEVELS:
+    case MODE_LEVELS: {
+        std::filesystem::path targetPath = std::filesystem::path("levels") / str;
         for (size_t i = 0; i < lvlpath.size(); ++i) {
-            if (lvlpath[i]=="./levels/" + str + "/") {
+            if (lvlpath[i] == targetPath) {
                 lvlpathcurrent=static_cast<int>(i);
                 return;
             }
         }
         throw Error("Level path not found: " + str);
-    case MODE_SKINS:
+    }
+    case MODE_SKINS: {
+        std::filesystem::path targetPath = std::filesystem::path("skins") / str;
         for (size_t i = 0; i < skinspath.size(); ++i) {
-            if (skinspath[i]=="./skins/" + str + "/") {
+            if (skinspath[i] == targetPath) {
                 skinspathcurrent=static_cast<int>(i);
                 return;
             }
         }
         throw Error("Skin path not found: " + str);
+    }
     default:
         throw Error("Unknown mode provided to Settings::setPath");
     }
 }
 
 string Settings::getFile(string filename) {
-    struct stat fileInfo;
     for(int i = 0; i < searchpaths.size(); i++) {
-        string path = searchpaths[i] + "/" + filename;
-        if (stat(path.c_str(), &fileInfo) == 0) {
-            return path;
+        std::filesystem::path path = searchpaths[i] / filename;
+        if (std::filesystem::exists(path) && std::filesystem::is_regular_file(path)) {
+            return path.string();
         }
     }
     throw new Error("File not found: " + filename);
@@ -50,7 +55,7 @@ bool Settings::LoadSettings(std::string filename) {
 
     filename = getFile(filename);
 
-    std::ifstream	file( filename.c_str() );
+    std::ifstream	file( filename );
     std::string		buffer,
     tmpstr;
     char			c=';' ;
@@ -93,11 +98,11 @@ bool Settings::LoadSettings(std::string filename) {
             else if (buffer == "GATEY") file >> gatey;
             else if (buffer == "LEVEL_PATH") {
                 getline(file, tmpstr, ';');
-                lvlpath.push_back("./levels/" + tmpstr + "/");
+                lvlpath.push_back(std::filesystem::path("levels") / tmpstr);
             }
             else if (buffer == "SKINS_PATH") {
                 getline(file, tmpstr, ';');
-                skinspath.push_back("./skins/" + tmpstr + "/");
+                skinspath.push_back(std::filesystem::path("skins") / tmpstr);
             }
         }
     }
@@ -130,9 +135,9 @@ Settings::Settings() {
     baddieiq = 0;
     vuln_duration = 0;
 
-    searchpaths.push_back(".");
-    searchpaths.push_back(string(getenv("HOME")) + "/" HOME_CONF_PATH);
-    searchpaths.push_back(APP_PATH);
+    searchpaths.push_back(std::filesystem::path("."));
+    searchpaths.push_back(PathUtils::getHomeConfigPath());
+    searchpaths.push_back(PathUtils::getAppPath());
 }
 
 Settings::~Settings() {}

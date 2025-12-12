@@ -10,78 +10,24 @@
 
 #include "hScore.h"
 #include "Constants.h"
+#include "PathUtils.h"
 #include <algorithm>
 #include <cctype>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
 #include <iterator>
 #include <sstream>
-#include <sys/stat.h>
 #include <vector>
 
 namespace {
-std::string ensureTrailingSlash(const std::string& path) {
-    if (path.empty() || path.back() == '/') {
-        return path;
-    }
-    return path + '/';
-}
-
-std::string joinPath(const std::string& base, const std::string& relative) {
-    if (relative.empty()) {
-        return base;
-    }
-    if (!relative.empty() && (relative[0] == '/'
-#ifdef _WIN32
-        || (relative.size() > 1 && relative[1] == ':')
-#endif
-        )) {
-        return relative;
-    }
-    return ensureTrailingSlash(base) + relative;
-}
-
-bool fileExists(const std::string& path) {
-    if (path.empty()) {
-        return false;
-    }
-    struct stat info {};
-    return stat(path.c_str(), &info) == 0 && S_ISREG(info.st_mode);
-}
-
-bool dirExists(const std::string& path) {
-    if (path.empty()) {
-        return false;
-    }
-    struct stat info {};
-    return stat(path.c_str(), &info) == 0 && S_ISDIR(info.st_mode);
-}
-
-bool ensureDirectory(const std::string& path) {
-    if (path.empty() || dirExists(path)) {
-        return true;
-    }
-
-    const auto slashPos = path.find_last_of('/');
-    if (slashPos != std::string::npos) {
-        const std::string parent = path.substr(0, slashPos);
-        if (!ensureDirectory(parent)) {
-            return false;
-        }
-    }
-
-    return mkdir(path.c_str(), 0755) == 0 || errno == EEXIST;
-}
-
-std::vector<std::string> buildSearchPaths() {
+std::vector<std::filesystem::path> buildSearchPaths() {
     // FIXME: Procura arquivos nas mesmas pastas utilizadas para mapas, priorizando a cópia na pasta do usuário.
-    std::vector<std::string> paths;
-    if (const char* home = std::getenv("HOME")) {
-        paths.emplace_back(std::string(home) + "/" HOME_CONF_PATH);
-    }
+    std::vector<std::filesystem::path> paths;
+    paths.emplace_back(PathUtils::getHomeConfigPath());
     paths.emplace_back(".");
-    paths.emplace_back(APP_PATH);
+    paths.emplace_back(PathUtils::getAppPath());
     return paths;
 }
 
@@ -144,9 +90,9 @@ hScore::~hScore() = default;
 
 void hScore::clear() {
     entries.assign(MAXENTRIES, {"", 0});
-    const std::string target = resolveWritablePath();
+    const std::filesystem::path target = resolveWritablePath();
     if (!target.empty()) {
-        remove(target.c_str());
+        remove(target.string().c_str());
     }
 }
 
@@ -156,12 +102,12 @@ int hScore::load() {
         return 1;
     }
 
-    const std::string writableCandidate = resolveWritablePath();
-    const bool hasWritableFile = fileExists(writableCandidate);
+    const std::filesystem::path writableCandidate = resolveWritablePath();
+    const bool hasWritableFile = !writableCandidate.empty() && std::filesystem::exists(writableCandidate) && std::filesystem::is_regular_file(writableCandidate);
 
     std::ifstream file;
     if (hasWritableFile) {
-        file.open(writableCandidate.c_str(), std::ios::binary);
+        file.open(writableCandidate, std::ios::binary);
         if (file) {
             resolvedFilename = writableCandidate;
         }
@@ -171,12 +117,12 @@ int hScore::load() {
         resolvedFilename = resolveExistingPath();
 
         if (!resolvedFilename.empty()) {
-            file.open(resolvedFilename.c_str(), std::ios::binary);
+            file.open(resolvedFilename, std::ios::binary);
         }
 
-        if (!file && fileExists(filename)) {
+        if (!file && std::filesystem::exists(filename) && std::filesystem::is_regular_file(filename)) {
             file.clear();
-            file.open(filename.c_str(), std::ios::binary);
+            file.open(filename, std::ios::binary);
             if (file) {
                 resolvedFilename = filename;
             }
@@ -228,15 +174,15 @@ int hScore::save() {
         return 1;
     }
 
-    std::string target = resolvedFilename.empty() ? resolveWritablePath() : resolvedFilename;
+    std::filesystem::path target = resolvedFilename.empty() ? resolveWritablePath() : resolvedFilename;
     if (target.empty()) {
         target = filename;
     }
 
-    std::ofstream file(target.c_str(), std::ios::binary | std::ios::trunc);
+    std::ofstream file(target, std::ios::binary | std::ios::trunc);
     if (!file && target != filename) {
         file.clear();
-        file.open(filename.c_str(), std::ios::binary | std::ios::trunc);
+        file.open(filename, std::ios::binary | std::ios::trunc);
         if (file) {
             target = filename;
         }
@@ -286,7 +232,7 @@ void hScore::add(std::string n, unsigned int sc) {
     ensureSize();
 }
 
-void hScore::setfilename(std::string fn) {
+void hScore::setfilename(std::filesystem::path fn) {
     filename = fn;
     resolvedFilename.clear();
 }
@@ -347,18 +293,18 @@ bool hScore::loadPlaintext(const std::string& data) {
     return parsedAny;
 }
 
-std::string hScore::resolveExistingPath() const {
+std::filesystem::path hScore::resolveExistingPath() const {
     if (filename.empty()) {
         return {};
     }
 
-    if (fileExists(filename)) {
+    if (std::filesystem::exists(filename) && std::filesystem::is_regular_file(filename)) {
         return filename;
     }
 
     for (const auto& base : buildSearchPaths()) {
-        const std::string candidate = joinPath(base, filename);
-        if (fileExists(candidate)) {
+        const std::filesystem::path candidate = base / filename;
+        if (std::filesystem::exists(candidate) && std::filesystem::is_regular_file(candidate)) {
             return candidate;
         }
     }
@@ -366,7 +312,7 @@ std::string hScore::resolveExistingPath() const {
     return {};
 }
 
-std::string hScore::resolveWritablePath() const {
+std::filesystem::path hScore::resolveWritablePath() const {
     if (filename.empty()) {
         return {};
     }
@@ -375,19 +321,20 @@ std::string hScore::resolveWritablePath() const {
         return resolvedFilename;
     }
 
-    if (!filename.empty() && filename[0] == '/') {
+    if (!filename.empty() && filename.is_absolute()) {
         return filename;
     }
 
     for (const auto& base : buildSearchPaths()) {
-        const std::string candidate = joinPath(base, filename);
-        const auto slashPos = candidate.find_last_of('/');
-        if (slashPos == std::string::npos) {
+        const std::filesystem::path candidate = base / filename;
+        const std::filesystem::path parentDir = candidate.parent_path();
+        
+        if (parentDir.empty()) {
             continue;
         }
 
         // Garante que vai ser gravado na cópia instalada do nível ao invés da pasta atual do executável.
-        if (ensureDirectory(candidate.substr(0, slashPos))) {
+        if (std::filesystem::create_directories(parentDir)) {
             return candidate;
         }
     }

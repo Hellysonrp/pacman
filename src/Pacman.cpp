@@ -9,6 +9,7 @@
 
 
 #include "Pacman.h"
+#include <filesystem>
 
 #define PACSIZE 40
 
@@ -245,7 +246,7 @@ bool Pacman::LoadTextures(std::string path) {
 
     try {
         for (i=0;i<NUMPACANIM;i++) {
-            pacEl[i].reset(IMG_Load((path + "pac" + num[i] + ".png").c_str()), SDL_FreeSurface);
+            pacEl[i].reset(IMG_Load((std::filesystem::path(path) / ("pac" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
 
             if ( !pacEl[i] )
                 throw Error("Failed to load pacman texture: " + num[i]);

@@ -11,6 +11,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <vector>
@@ -41,7 +42,7 @@ public:
 
     bool onlist(unsigned int) const;
 
-    void setfilename(std::string fn);
+    void setfilename(std::filesystem::path fn);
     std::vector<ScoreEntry> getEntries() const;
 
 private:
@@ -50,10 +51,10 @@ private:
     void ensureSize();
     bool loadPlaintext(const std::string& data);
     bool loadLegacy(const std::string& data);
-    std::string resolveExistingPath() const;
-    std::string resolveWritablePath() const;
+    std::filesystem::path resolveExistingPath() const;
+    std::filesystem::path resolveWritablePath() const;
 
     std::vector<ScoreEntry> entries;
-    std::string filename;
-    std::string resolvedFilename;
+    std::filesystem::path filename;
+    std::filesystem::path resolvedFilename;
 };

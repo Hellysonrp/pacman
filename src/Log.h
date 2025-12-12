@@ -10,6 +10,7 @@
 
 #pragma once
 #include <string>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <cstdlib>
@@ -24,10 +25,10 @@ public:
     Log();
     ~Log();
 
-    bool setFilename(std::string fn);
+    bool setFilename(std::filesystem::path fn);
 
     bool print(std::string txt);
 private:
-    std::string
+    std::filesystem::path
             filename;
 };

@@ -15,6 +15,7 @@
 #include <SDL/SDL_ttf.h>
 #include <SDL/SDL_image.h>
 #include <string>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -81,7 +82,7 @@ public:
     void renderEditor();
     void logicEditor();
     void editorSave();
-    void setEditorPath(std::string path) {editorpath=path;}
+    void setEditorPath(std::filesystem::path path) {editorpath=path;}
 
     void PrepareShutdown();
 
@@ -183,7 +184,7 @@ private:
             mouseX,
             mouseY;
 
-    std::string
+    std::filesystem::path
             editorpath;
 
 };

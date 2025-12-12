@@ -9,6 +9,7 @@
 
 
 #include "Ghost.h"
+#include <filesystem>
 
 #define GHOSTSIZE 40
 
@@ -864,12 +865,13 @@ bool Ghost::LoadTextures(std::string path) {
 
     std::string files[5];
     SDL_PixelFormat *fmt;
+    std::filesystem::path basePath(path);
 
-    files[0]=path + "baddie" + filename + ".png";
-    files[1]=path + "baddie_eyes.png";
-    files[2]=path + "baddie" + filename + "vuln.png";
-    files[3]=path + "baddie" + filename + "warn.png";
-    files[4]=path + "baddie_dead.png";
+    files[0]=(basePath / ("baddie" + filename + ".png")).string();
+    files[1]=(basePath / "baddie_eyes.png").string();
+    files[2]=(basePath / ("baddie" + filename + "vuln.png")).string();
+    files[3]=(basePath / ("baddie" + filename + "warn.png")).string();
+    files[4]=(basePath / "baddie_dead.png").string();
 
     try {
 

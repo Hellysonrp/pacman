@@ -58,3 +58,4 @@ public:
         return Position(x - other.x, y - other.y);
     }
 };
+

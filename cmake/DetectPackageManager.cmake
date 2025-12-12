@@ -15,7 +15,7 @@ function(detect_package_manager)
             set(PKG_INSTALL_CMD "sudo ${APT_GET} install -y" PARENT_SCOPE)
             set(PKG_UPDATE_CMD "sudo ${APT_GET} update" PARENT_SCOPE)
             set(REQUIRED_PACKAGES 
-                "libsdl1.2-dev;libsdl-ttf2.0-dev;libsdl-gfx1.2-dev;libsdl-image1.2-dev;libsdl-mixer1.2-dev;libboost-dev"
+                "libsdl1.2-dev;libsdl-ttf2.0-dev;libsdl-gfx1.2-dev;libsdl-image1.2-dev;libsdl-mixer1.2-dev;libboost-dev;libboost-filesystem-dev"
                 PARENT_SCOPE
             )
         elseif(DNF)

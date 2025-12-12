@@ -9,6 +9,8 @@
 
 
 #include "Sounds.h"
+#include "PathUtils.h"
+#include <filesystem>
 
 extern App app;
 extern Log logtxt;
@@ -72,7 +74,7 @@ bool Sounds::init() {
         //load wav files
         int i;
         for (i=0;i<NUMOFSOUNDS;i++) {
-            string path = APP_PATH "/" + sndPaths[i];
+            string path = (PathUtils::getAppPath() / sndPaths[i]).string();
             snd[i].reset(Mix_LoadWAV(path.c_str()), Mix_FreeChunk);
             if ( snd[i] == NULL )
                 throw Error(Mix_GetError());

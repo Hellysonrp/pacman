@@ -10,7 +10,9 @@
 
 #include "Game.h"
 #include "Position.h"
+#include "PathUtils.h"
 #include <vector>
+#include <filesystem>
 
 #define PAC	1
 #define GHOST1 2
@@ -39,8 +41,8 @@ void Game::editorSave() {
     bool error=0;		//1 on error
 
 
-    if (editorpath == "") editorpath = "./levels/new/";
-    file.open( (editorpath + MAPFILE).c_str()/*, std::ios::out */);
+    if (editorpath.empty()) editorpath = std::filesystem::path("levels") / "new";
+    file.open(editorpath / MAPFILE);
 
     if (!file) error=true;
 
@@ -57,7 +59,7 @@ void Game::editorSave() {
     if (file.is_open() ) file.close();
 
 
-    file.open( (editorpath + OBJFILE).c_str() );
+    file.open(editorpath / OBJFILE);
     if (!file) error=1;
 
     if (!error) {
@@ -72,7 +74,7 @@ void Game::editorSave() {
 
     if (file.is_open() ) file.close();
 
-    file.open ( ( editorpath + CFGFILE ).c_str());
+    file.open(editorpath / CFGFILE);
     if (!file) error=true;
 
     if (!error) {
@@ -102,7 +104,7 @@ void Game::editorSave() {
         file.open("pacman.cfg", std::ios::out | std::ios::app);
         if (!file) error=true;
         else {
-            file << "\nLEVEL_PATH=" << editorpath;
+            file << "\nLEVEL_PATH=" << editorpath.string();
             if (file.is_open()) file.close();
             settings.lvlpath.push_back(editorpath);
         }
@@ -191,7 +193,7 @@ void Game::initEditor() {
     if ( objmap ) delete[] objmap;
 
     //create new empty maps
-    if ( editorpath == "" ) {
+    if ( editorpath.empty() ) {
         map = new int[ settings.fieldheight * settings.fieldwidth ];
         objmap = new int[ settings.fieldheight * settings.fieldwidth ];
 
@@ -211,7 +213,7 @@ void Game::initEditor() {
 
         //load settings
 
-        settings.LoadSettings( editorpath + CFGFILE );
+        settings.LoadSettings( (editorpath / CFGFILE).string() );
 
         //if level has different field size than currently selected, setup new window with proper size
         if (settings.fieldwidth*settings.tilesize != app.getScreen()->w
@@ -225,8 +227,8 @@ void Game::initEditor() {
         map = new int[ settings.fieldheight * settings.fieldwidth ];
         objmap = new int[ settings.fieldheight * settings.fieldwidth ];
 
-        loadMap( editorpath + MAPFILE, map);
-        loadMap( editorpath + OBJFILE, objmap);
+        loadMap( (editorpath / MAPFILE).string(), map);
+        loadMap( (editorpath / OBJFILE).string(), objmap);
 
         //if loading is successful, set editorpath
 
@@ -235,7 +237,7 @@ void Game::initEditor() {
 }
 void Game::changeSkin() {
     int i;
-    for (i=0;i<NUMOFOBJECTS;i++) objects[i]->LoadTextures( APP_PATH "/" + settings.skinspath[settings.skinspathcurrent] );
+    for (i=0;i<NUMOFOBJECTS;i++) objects[i]->LoadTextures( (PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string() );
 }
 void Game::emptyMsgPump() {
 
@@ -1056,7 +1058,7 @@ void Game::nextLvl() {
         objects[GHOST3]->reset(settings.baddiestartx-2, settings.baddiestarty);
         objects[GHOST4]->reset(settings.baddiestartx, settings.baddiestarty-2);
 
-        tmpstr = settings.lvlpath[settings.lvlpathcurrent] + OBJFILE;
+        tmpstr = (settings.lvlpath[settings.lvlpathcurrent] / OBJFILE).string();
         if ( ! loadMap(tmpstr, objmap) )
             throw Error("Error loading objmap.txt during Game::nextLvl()");
 
@@ -1113,7 +1115,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
         settings.setPath(MODE_LEVELS,level);
         settings.setPath(MODE_SKINS,skin);
 
-        tmpstr = settings.lvlpath[settings.lvlpathcurrent] + CFGFILE;
+        tmpstr = (settings.lvlpath[settings.lvlpathcurrent] / CFGFILE).string();
 
         if ( !settings.LoadSettings(tmpstr) )
             throw Error("Error loading level settings");
@@ -1190,11 +1192,11 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
         map = new int[settings.fieldheight*settings.fieldwidth];
         objmap = new int[settings.fieldheight*settings.fieldwidth];
 
-        tmpstr = settings.lvlpath[settings.lvlpathcurrent];
+        tmpstr = settings.lvlpath[settings.lvlpathcurrent].string();
 
-        if ( !loadMap(tmpstr + MAPFILE, map) )
+        if ( !loadMap((settings.lvlpath[settings.lvlpathcurrent] / MAPFILE).string(), map) )
             throw Error("Failed to load map.txt");
-        if ( !loadMap(tmpstr + OBJFILE, objmap) )
+        if ( !loadMap((settings.lvlpath[settings.lvlpathcurrent] / OBJFILE).string(), objmap) )
             throw Error("Failed to load objmap.txt");
 
         logtxt.print("Maps loaded");
@@ -1208,7 +1210,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
         //loading level graphics
 
         objects[0] = new BckgrObj( app.getScreen(), 10 );
-        objects[0]->LoadTextures(APP_PATH "/" + settings.skinspath[settings.skinspathcurrent]);
+        objects[0]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         logtxt.print("Level background loaded");
 
@@ -1218,7 +1220,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
 
         setState( STATE_STOPPED);
 
-        hscore.setfilename(settings.lvlpath[settings.lvlpathcurrent] + "hscore");
+        hscore.setfilename((settings.lvlpath[settings.lvlpathcurrent] / "hscore").string());
         hscore.load();
 
 
@@ -1233,7 +1235,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             settings.fieldheight,
                             settings.fieldwidth,
                             map);
-        objects[1]->LoadTextures(APP_PATH "/" + settings.skinspath[settings.skinspathcurrent]);
+        objects[1]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         objects[2] = new Ghost( app.getScreen(),
                             20,
@@ -1245,7 +1247,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             settings.fieldwidth,
                             map,
                             "1");
-        objects[2]->LoadTextures(APP_PATH "/" + settings.skinspath[settings.skinspathcurrent]);
+        objects[2]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         objects[3] = new Ghost( app.getScreen(),
                             20,
@@ -1257,7 +1259,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             settings.fieldwidth,
                             map,
                             "2");
-        objects[3]->LoadTextures(APP_PATH "/" + settings.skinspath[settings.skinspathcurrent]);
+        objects[3]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         objects[4] = new Ghost( app.getScreen(),
                             20,
@@ -1269,7 +1271,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             settings.fieldwidth,
                             map,
                             "3");
-        objects[4]->LoadTextures(APP_PATH "/" + settings.skinspath[settings.skinspathcurrent]);
+        objects[4]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         objects[5] = new Ghost( app.getScreen(),
                             20,
@@ -1281,7 +1283,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             settings.fieldwidth,
                             map,
                             "4");
-        objects[5]->LoadTextures(APP_PATH "/" + settings.skinspath[settings.skinspathcurrent]);
+        objects[5]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         for (i=0;i<4;i++) ((Ghost*)objects[i+2])->changeDifficulty(0, settings.baddieiq);	//SET DIFFICULTY SPECIFIED IN CONFIG FILE
 
@@ -1387,7 +1389,7 @@ bool Game::loadMap(std::string file, int* memmap) {
     std::ifstream mp;
 
     file = settings.getFile(file);
-    mp.open( file.c_str() );
+    mp.open( file );
 
     if (!mp ) {
         logtxt.print(file + " - Loading error");
@@ -1495,7 +1497,7 @@ void Game::render() {
 bool Game::loadFont() {
 
     try {
-        font = TTF_OpenFont(APP_PATH "/" "arial.ttf",24);
+        font = TTF_OpenFont((PathUtils::getAppPath() / "arial.ttf").string().c_str(), 24);
         if (!font)
             throw Error("Failed to create font object ");
     }

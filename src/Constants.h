@@ -36,9 +36,6 @@
 #define OBJFILE "objmap"
 #define MAPFILE "map"
 
-#define APP_PATH "/usr/share/pacman_sdl"
-#define HOME_CONF_PATH ".config/pacman_sdl"
-
 #define FRUITDURATION 10000
 #define BOOSTTIME 3000
 
