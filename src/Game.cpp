@@ -645,11 +645,17 @@ void Game::renderMenu() {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 160);
         SDL_RenderFillRect(renderer, &backdropRect);
 
+        // Reset renderer blend mode to NONE before rendering text textures
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+        // Reset renderer draw color to opaque before rendering text textures
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+
         for (const std::string& line : frame) {
             txt.reset(TTF_RenderUTF8_Solid(menuFace, line.c_str(), frameColor), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
+                SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
                 SDL_Rect centeredLine = {centerX - txt->w / 2, lineRect.y, txt->w, txt->h};
                 SDL_RenderCopy(renderer, texture, NULL, &centeredLine);
                 SDL_DestroyTexture(texture);
@@ -674,6 +680,7 @@ void Game::renderMenu() {
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
+                SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
                 SDL_Rect centeredOption = {centerX - txt->w / 2, optionRect.y, txt->w, txt->h};
                 SDL_RenderCopy(renderer, texture, NULL, &centeredOption);
                 SDL_DestroyTexture(texture);
