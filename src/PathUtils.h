@@ -14,3 +14,4 @@ namespace PathUtils {
     std::filesystem::path getHomeConfigPath();
 }
 
+

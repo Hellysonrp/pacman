@@ -11,8 +11,8 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <SDL/SDL.h>
-#include <SDL/SDL_rotozoom.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL2_rotozoom.h>
 #include <string>
 
 using boost::shared_ptr;
@@ -20,8 +20,8 @@ using boost::shared_ptr;
 class Object
 {
 public:
-    Object(shared_ptr<SDL_Surface> buffer, int os )
-    :	buf(buffer),
+    Object(SDL_Renderer* renderer, int os )
+    :	renderer(renderer),
             offset(os),
             paused(true),
             alpha(255)
@@ -63,8 +63,7 @@ public:
         return rotatedSurface;
     }
 protected:
-    shared_ptr<SDL_Surface>
-            buf;
+    SDL_Renderer* renderer;
 
     const int
             offset;

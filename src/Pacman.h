@@ -11,9 +11,9 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#include <SDL/SDL_rotozoom.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL2_rotozoom.h>
 #include <string>
 #include <iostream>
 
@@ -32,7 +32,7 @@ class Pacman :
 	public Object
 {
 public:
-    Pacman(shared_ptr <SDL_Surface> buf, int os, int ix, int iy, int ispdmod, int itilesize, int iheight, int iwidth, int *imap);
+    Pacman(SDL_Renderer* renderer, int os, int ix, int iy, int ispdmod, int itilesize, int iheight, int iwidth, int *imap);
 
     void Draw();
     void Draw(int ix, int iy, int obj=3, int type=1);
@@ -74,16 +74,16 @@ private:
             xfloat,	//current position as floating point based on pixel pos - allows for infinite speed
             yfloat;	// variations because xfloat can be reduced to xpix
 
-    shared_ptr<SDL_Surface>
+    shared_ptr<SDL_Texture>
             pacEl[NUMPACANIM],
             pacElRot[NUMPACANIM][3];
 
     int getAnimationFrame() const;
     unsigned int getAnimationSequenceLength() const;
-    SDL_Surface* getSurfaceForDirection(int frameIndex) const;
-    SDL_Surface* surfaceRight(int frameIndex) const;
-    SDL_Surface* surfaceLeft(int frameIndex) const;
-    SDL_Surface* surfaceUp(int frameIndex) const;
-    SDL_Surface* surfaceDown(int frameIndex) const;
-    SDL_Surface* surfaceIdle(int frameIndex) const;
+    SDL_Texture* getTextureForDirection(int frameIndex) const;
+    SDL_Texture* textureRight(int frameIndex) const;
+    SDL_Texture* textureLeft(int frameIndex) const;
+    SDL_Texture* textureUp(int frameIndex) const;
+    SDL_Texture* textureDown(int frameIndex) const;
+    SDL_Texture* textureIdle(int frameIndex) const;
 };

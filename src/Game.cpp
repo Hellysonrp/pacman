@@ -216,8 +216,10 @@ void Game::initEditor() {
         settings.LoadSettings( (editorpath / CFGFILE).string() );
 
         //if level has different field size than currently selected, setup new window with proper size
-        if (settings.fieldwidth*settings.tilesize != app.getScreen()->w
-            || settings.fieldheight*settings.tilesize+EXTRA_Y_SPACE != app.getScreen()->h) {
+        int winW, winH;
+        SDL_GetWindowSize(app.getWindow(), &winW, &winH);
+        if (settings.fieldwidth*settings.tilesize != winW
+            || settings.fieldheight*settings.tilesize+EXTRA_Y_SPACE != winH) {
             app.InitWindow();
             logtxt.print("window resized...");
         }
@@ -370,9 +372,9 @@ void Game::clearHscore() {
 }
 
 void Game::renderViewHscore() {
-    shared_ptr<SDL_Surface>
-            buf = app.getScreen(),
-            txt;
+    SDL_Renderer* renderer = app.getRenderer();
+    shared_ptr<SDL_Surface> txt;
+    SDL_Texture* texture;
     SDL_Color col,
             highlightCol;
     std::ostringstream ostr, scstr;
@@ -411,22 +413,35 @@ void Game::renderViewHscore() {
 
         txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
-
-        SDL_BlitSurface(txt.get(),NULL,buf.get(),&scorebox);
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (texture) {
+            SDL_Rect textRect = {scorebox.x, scorebox.y, txt->w, txt->h};
+            SDL_RenderCopy(renderer, texture, NULL, &textRect);
+            SDL_DestroyTexture(texture);
+        }
 
         if (hasRecentGameOver) {
             ostr.str("");
             ostr << "GAME OVER - PONTOS: " << lastRecordedScore;
             txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-            SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_Rect textRect = {rect.x, rect.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
             rect.y += 50;
         }
 
         txt.reset(TTF_RenderText_Solid(font,"HIGHSCORES:",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
-
-        SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (texture) {
+            SDL_Rect textRect = {rect.x, rect.y, txt->w, txt->h};
+            SDL_RenderCopy(renderer, texture, NULL, &textRect);
+            SDL_DestroyTexture(texture);
+        }
         rect.y += 40;
 
         entryRect.x = settings.fieldwidth * settings.tilesize / 2 - 200;
@@ -450,15 +465,24 @@ void Game::renderViewHscore() {
                 positionStream << (i+1) << "º";
                 txt.reset(TTF_RenderText_Solid(font,positionStream.str().c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
-                SDL_BlitSurface(txt.get(),NULL,buf.get(),&entryRect);
+                texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+                if (texture) {
+                    SDL_Rect textRect = {entryRect.x, entryRect.y, txt->w, txt->h};
+                    SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                    SDL_DestroyTexture(texture);
+                }
 
                 SDL_Rect nameRect = entryRect;
                 nameRect.x += 70;
-                nameRect.w = 160;
                 std::string nameToShow = entry.playerName.empty() ? "---" : entry.playerName;
                 txt.reset(TTF_RenderText_Solid(font,nameToShow.c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
-                SDL_BlitSurface(txt.get(),NULL,buf.get(),&nameRect);
+                texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+                if (texture) {
+                    SDL_Rect textRect = {nameRect.x, nameRect.y, txt->w, txt->h};
+                    SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                    SDL_DestroyTexture(texture);
+                }
 
                 SDL_Rect scoreRect = entryRect;
                 scoreRect.x += 240;
@@ -466,7 +490,12 @@ void Game::renderViewHscore() {
                 scstr << entry.playerScore;
                 txt.reset(TTF_RenderText_Solid(font,scstr.str().c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
-                SDL_BlitSurface(txt.get(),NULL,buf.get(),&scoreRect);
+                texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+                if (texture) {
+                    SDL_Rect textRect = {scoreRect.x, scoreRect.y, txt->w, txt->h};
+                    SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                    SDL_DestroyTexture(texture);
+                }
             }
 
             entryRect.y += 40;
@@ -481,13 +510,23 @@ void Game::renderViewHscore() {
             const char* restartMsg = "Pressione N para iniciar uma nova partida";
             txt.reset(TTF_RenderText_Solid(font,restartMsg,col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-            SDL_BlitSurface(txt.get(),NULL,buf.get(),&instructionRect);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_Rect textRect = {instructionRect.x, instructionRect.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
         }
         else if (rankingFromHotkey) {
             const char* backMsg = "Pressione H novamente para voltar";
             txt.reset(TTF_RenderText_Solid(font,backMsg,col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-            SDL_BlitSurface(txt.get(),NULL,buf.get(),&instructionRect);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_Rect textRect = {instructionRect.x, instructionRect.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
         }
 
     }
@@ -829,9 +868,8 @@ void Game::logicGame() {
     }
 }
 void Game::renderEnterHscore() {
-    shared_ptr<SDL_Surface>
-            buf = app.getScreen(),
-            txt;
+    SDL_Renderer* renderer = app.getRenderer();
+    shared_ptr<SDL_Surface> txt;
     std::ostringstream ostr;
     SDL_Rect rect;
     SDL_Color col;
@@ -864,24 +902,36 @@ void Game::renderEnterHscore() {
 
         txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
-
-        SDL_BlitSurface(txt.get(),NULL,buf.get(),&scorebox);
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (texture) {
+            SDL_Rect textRect = {scorebox.x, scorebox.y, txt->w, txt->h};
+            SDL_RenderCopy(renderer, texture, NULL, &textRect);
+            SDL_DestroyTexture(texture);
+        }
 
         // DRAW HIGHSCORE ENTRY
 
 
         txt.reset(TTF_RenderText_Solid(font,"NEW HIGHSCORE!",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
-
-        SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (texture) {
+            SDL_Rect textRect = {rect.x, rect.y, txt->w, txt->h};
+            SDL_RenderCopy(renderer, texture, NULL, &textRect);
+            SDL_DestroyTexture(texture);
+        }
 
         rect.y += 50;
 
 
         txt.reset(TTF_RenderText_Solid(font,"Enter name:",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
-
-        SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (texture) {
+            SDL_Rect textRect = {rect.x, rect.y, txt->w, txt->h};
+            SDL_RenderCopy(renderer, texture, NULL, &textRect);
+            SDL_DestroyTexture(texture);
+        }
 
         rect.y += 70;
         rect.h = 50;
@@ -894,8 +944,12 @@ void Game::renderEnterHscore() {
 
             txt.reset(TTF_RenderText_Solid(font,tmp.c_str(),col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-
-            SDL_BlitSurface(txt.get(),NULL,buf.get(),&rect);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_Rect textRect = {rect.x, rect.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
 
             rect.x=rect.x+40;
         }
@@ -934,10 +988,15 @@ void Game::renderNormal() {
 
         ostr << "level: " << level << " score: " << score;
 
+        SDL_Renderer* renderer = app.getRenderer();
         txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
-
-        SDL_BlitSurface(txt.get(),NULL,app.getScreen().get(),&scorebox);
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (texture) {
+            SDL_Rect textRect = {scorebox.x, scorebox.y, txt->w, txt->h};
+            SDL_RenderCopy(renderer, texture, NULL, &textRect);
+            SDL_DestroyTexture(texture);
+        }
 
         //DRAW SCORE POPUP
         if (floatingscorecounter != 0) {
@@ -950,9 +1009,13 @@ void Game::renderNormal() {
 
             txt.reset(TTF_RenderText_Solid(font,scoretext.str().c_str(),col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-
-            SDL_SetAlpha(txt.get(), SDL_SRCALPHA, 55+floatingscorecounter*2);
-            SDL_BlitSurface(txt.get(),NULL,app.getScreen().get(),&floatingscorebox);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_SetTextureAlphaMod(texture, 55+floatingscorecounter*2);
+                SDL_Rect textRect = {floatingscorebox.x, floatingscorebox.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
         }
 
         // PAUSE
@@ -966,8 +1029,12 @@ void Game::renderNormal() {
 
             txt.reset(TTF_RenderText_Solid(font,"PAUSED",col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-
-            SDL_BlitSurface(txt.get(),NULL,app.getScreen().get(),&pauserect);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_Rect textRect = {pauserect.x, pauserect.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
         }
 
         // LEVEL CLEARED
@@ -981,8 +1048,12 @@ void Game::renderNormal() {
 
             txt.reset(TTF_RenderText_Solid(font,"LEVEL CLEARED!",col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
-
-            SDL_BlitSurface(txt.get(),NULL,app.getScreen().get(),&pauserect);
+            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+            if (texture) {
+                SDL_Rect textRect = {pauserect.x, pauserect.y, txt->w, txt->h};
+                SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                SDL_DestroyTexture(texture);
+            }
         }
     }
 
@@ -1182,8 +1253,10 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
         logtxt.print("Unloading complete");
 
         //if level has different field size than currently selected, setup new window with proper size
-        if (settings.fieldwidth*settings.tilesize != app.getScreen()->w
-            || settings.fieldheight*settings.tilesize+EXTRA_Y_SPACE != app.getScreen()->h) {
+        int winW, winH;
+        SDL_GetWindowSize(app.getWindow(), &winW, &winH);
+        if (settings.fieldwidth*settings.tilesize != winW
+            || settings.fieldheight*settings.tilesize+EXTRA_Y_SPACE != winH) {
             app.InitWindow();
             logtxt.print("window resized...");
         }
@@ -1209,7 +1282,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
 
         //loading level graphics
 
-        objects[0] = new BckgrObj( app.getScreen(), 10 );
+        objects[0] = new BckgrObj( app.getRenderer(), 10 );
         objects[0]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
         logtxt.print("Level background loaded");
@@ -1226,7 +1299,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
 
         //create pacman + ghosts
 
-        objects[1] = new Pacman( app.getScreen(),
+        objects[1] = new Pacman( app.getRenderer(),
                             20,
                             settings.pacstartx,
                             settings.pacstarty,
@@ -1237,7 +1310,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             map);
         objects[1]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
-        objects[2] = new Ghost( app.getScreen(),
+        objects[2] = new Ghost( app.getRenderer(),
                             20,
                             settings.baddiestartx,
                             settings.baddiestarty,
@@ -1249,7 +1322,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             "1");
         objects[2]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
-        objects[3] = new Ghost( app.getScreen(),
+        objects[3] = new Ghost( app.getRenderer(),
                             20,
                             settings.baddiestartx+2,
                             settings.baddiestarty,
@@ -1261,7 +1334,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             "2");
         objects[3]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
-        objects[4] = new Ghost( app.getScreen(),
+        objects[4] = new Ghost( app.getRenderer(),
                             20,
                             settings.baddiestartx-2,
                             settings.baddiestarty,
@@ -1273,7 +1346,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
                             "3");
         objects[4]->LoadTextures((PathUtils::getAppPath() / settings.skinspath[settings.skinspathcurrent]).string());
 
-        objects[5] = new Ghost( app.getScreen(),
+        objects[5] = new Ghost( app.getRenderer(),
                             20,
                             settings.baddiestartx,
                             settings.baddiestarty-2,
@@ -1442,11 +1515,8 @@ std::string Game::getFPS() {
 }
 
 void Game::render() {
-    shared_ptr<SDL_Surface>
-            buf = app.getScreen(),
-            txt;
-    SDL_Color
-            col;
+    SDL_Renderer* renderer = app.getRenderer();
+    SDL_Color col;
 
     col.r = col.g = col.b = 255;
 
@@ -1459,6 +1529,10 @@ void Game::render() {
         if ( !renderisbusy ) {
             renderisbusy = true;
 
+            // Clear renderer
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+            SDL_RenderClear(renderer);
+
             ////////////////////////////////
             // STATE SWITCH
             ////////////////////////////////
@@ -1470,13 +1544,18 @@ void Game::render() {
 
 
             if ( showfps ) {
-                txt.reset(TTF_RenderText_Solid(font,fps.c_str(),col), SDL_FreeSurface);
+                shared_ptr<SDL_Surface> txt(TTF_RenderText_Solid(font,fps.c_str(),col), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
 
-                SDL_BlitSurface(txt.get(),NULL,buf.get(),&fpsbox);
+                SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+                if (texture) {
+                    SDL_Rect textRect = {fpsbox.x, fpsbox.y, txt->w, txt->h};
+                    SDL_RenderCopy(renderer, texture, NULL, &textRect);
+                    SDL_DestroyTexture(texture);
+                }
             }
 
-            SDL_Flip(buf.get());
+            SDL_RenderPresent(renderer);
 
             renderisbusy = false;
             counter++;

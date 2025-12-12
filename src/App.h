@@ -9,8 +9,8 @@
 
 
 #pragma once
-#include <SDL/SDL.h>
-#include <SDL/SDL_ttf.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
 #include <iostream>
 #include "Log.h"
 #include "Settings.h"
@@ -39,8 +39,8 @@ public:
 
     inline bool getQuit() const { return quit; }
     void setQuit( bool q ) { quit = q; }
-    shared_ptr<SDL_Surface> getScreen() const { return screen; }
-    shared_ptr<SDL_Surface> getBuf() const { return buf; }
+    SDL_Renderer* getRenderer() const { return renderer; }
+    SDL_Window* getWindow() const { return window; }
     Sounds* getSnd() { return snd; }
 
 private:
@@ -52,9 +52,8 @@ private:
     bool
             quit;       //if true then quit application
 
-    shared_ptr<SDL_Surface>
-            screen,    //screen surface
-            buf;       //buffer surface
+    SDL_Window* window;
+    SDL_Renderer* renderer;
 
     Sounds
             *snd;

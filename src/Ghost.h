@@ -11,9 +11,9 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
-#include <SDL/SDL_rotozoom.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL2_rotozoom.h>
 #include <string>
 #include <iostream>
 #include <cstdlib>
@@ -33,7 +33,7 @@ class Ghost :
 	public Object
 {
 public:
-    Ghost(shared_ptr<SDL_Surface> buf, int os, int ix, int iy, int ispdmod, int itilesize,
+    Ghost(SDL_Renderer* renderer, int os, int ix, int iy, int ispdmod, int itilesize,
             int iheight, int iwidth, int *imap, std::string fn);
     ~Ghost();
 
@@ -97,7 +97,7 @@ private:
             xfloat,	//current position as floating point based on pixel pos - allows for infinite speed
             yfloat;	// variations because the xfloat can be reduced to xpix
 
-    shared_ptr<SDL_Surface>
+    shared_ptr<SDL_Texture>
             ghostEl[5];
 
     BHeap

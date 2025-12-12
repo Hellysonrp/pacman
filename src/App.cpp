@@ -16,8 +16,6 @@ extern Settings settings;
 
 void App::InitWindow() {
     try {
-        int bpp(32);
-
         if ( !settings.fieldwidth || !settings.fieldheight || !settings.tilesize ) {
             logtxt.print("fieldheight/fieldwidth/tilesize is not set, reverting to default window dimensions");
             std::cerr << "fieldheight/fieldwidth/tilesize is not set, reverting to default window dimensions";
@@ -27,15 +25,26 @@ void App::InitWindow() {
             settings.width=settings.fieldwidth*settings.tilesize;
         }
 
-        screen.reset(SDL_SetVideoMode( settings.width,
-                                   settings.height+EXTRA_Y_SPACE,
-                                   bpp,         //bits per pixel; todo-make this dynamic
-                                   SDL_NOFRAME | SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_ANYFORMAT ), SDL_FreeSurface);
+        window = SDL_CreateWindow("Pacman", 
+                                 SDL_WINDOWPOS_UNDEFINED, 
+                                 SDL_WINDOWPOS_UNDEFINED,
+                                 settings.width, 
+                                 settings.height+EXTRA_Y_SPACE,
+                                 SDL_WINDOW_BORDERLESS | SDL_WINDOW_SHOWN);
+        if (!window)
+            throw Error("Error while creating window");
 
-        if (screen == NULL)
-            throw Error("Error while setting video mode");
+        renderer = SDL_CreateRenderer(window, -1, 
+                                      SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+        if (!renderer) {
+            SDL_DestroyWindow(window);
+            window = nullptr;
+            throw Error("Error while creating renderer");
+        }
 
-        logtxt.print("Video mode set successfully");
+        SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+        logtxt.print("Window and renderer created successfully");
     }
     catch ( Error& err ) {
         std::cerr << (err.getDesc() );
@@ -45,7 +54,7 @@ void App::InitWindow() {
     catch (...) {
         std::cerr << "Unexpected exception";
         setQuit(true);
-        logtxt.print( "Unexpected exception in App::App()" );
+        logtxt.print( "Unexpected exception in App::InitWindow()" );
     }
 }
 
@@ -98,6 +107,8 @@ void App::InitSound() {
 
 App::App()
 :   quit(false),
+    window(nullptr),
+    renderer(nullptr),
     snd(NULL)
 
 {
@@ -126,6 +137,16 @@ void App::PrepareShutdown() {
 
     if ( TTF_WasInit() )
         TTF_Quit();
+
+    if (renderer) {
+        SDL_DestroyRenderer(renderer);
+        renderer = nullptr;
+    }
+
+    if (window) {
+        SDL_DestroyWindow(window);
+        window = nullptr;
+    }
 
     SDL_Quit();
 

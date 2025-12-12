@@ -1,4 +1,4 @@
-# Find SDL 1.2 libraries with MSYS2 and Windows support
+# Find SDL2 libraries with MSYS2 support
 
 function(find_sdl_libraries)
     # Determine MSYS2 paths if in MSYS2 environment
@@ -20,68 +20,52 @@ function(find_sdl_libraries)
         set(MSYS2_LIB_DIR "${MSYS2_PREFIX}/lib")
     endif()
     
-    # On Windows without MSYS2, use downloaded SDL directories
-    if(WIN32 AND NOT PKG_MANAGER STREQUAL "pacman" AND DEFINED SDL_DOWNLOAD_DIR AND EXISTS ${SDL_DOWNLOAD_DIR})
-        find_path(SDL_INCLUDE_DIR SDL/SDL.h
-            PATHS ${SDL_DIR}/include ${SDL_DOWNLOAD_DIR}/*/include
-            NO_DEFAULT_PATH
-        )
-        find_library(SDL_LIBRARY SDL
-            PATHS ${SDL_DIR}/lib ${SDL_DOWNLOAD_DIR}/*/lib
-            NO_DEFAULT_PATH
-        )
-        find_library(SDL_TTF_LIBRARY SDL_ttf
-            PATHS ${SDL_TTF_DIR}/lib ${SDL_DOWNLOAD_DIR}/*/lib
-            NO_DEFAULT_PATH
-        )
-        find_library(SDL_IMAGE_LIBRARY SDL_image
-            PATHS ${SDL_IMAGE_DIR}/lib ${SDL_DOWNLOAD_DIR}/*/lib
-            NO_DEFAULT_PATH
-        )
-        find_library(SDL_MIXER_LIBRARY SDL_mixer
-            PATHS ${SDL_MIXER_DIR}/lib ${SDL_DOWNLOAD_DIR}/*/lib
-            NO_DEFAULT_PATH
-        )
+    # Find SDL2 libraries
+    find_path(SDL2_INCLUDE_DIR SDL2/SDL.h PATHS ${MSYS2_INCLUDE_DIR} NO_DEFAULT_PATH)
+    find_library(SDL2_LIBRARY SDL2 PATHS ${MSYS2_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(SDL2_TTF_LIBRARY SDL2_ttf PATHS ${MSYS2_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(SDL2_IMAGE_LIBRARY SDL2_image PATHS ${MSYS2_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(SDL2_MIXER_LIBRARY SDL2_mixer PATHS ${MSYS2_LIB_DIR} NO_DEFAULT_PATH)
+    find_library(SDL2_GFX_LIBRARY SDL2_gfx PATHS ${MSYS2_LIB_DIR} NO_DEFAULT_PATH)
+    
+    # Fallback to standard system paths if not found in MSYS2
+    if(NOT SDL2_INCLUDE_DIR)
+        find_path(SDL2_INCLUDE_DIR SDL2/SDL.h)
+    endif()
+    if(NOT SDL2_LIBRARY)
+        find_library(SDL2_LIBRARY SDL2)
+    endif()
+    if(NOT SDL2_TTF_LIBRARY)
+        find_library(SDL2_TTF_LIBRARY SDL2_ttf)
+    endif()
+    if(NOT SDL2_IMAGE_LIBRARY)
+        find_library(SDL2_IMAGE_LIBRARY SDL2_image)
+    endif()
+    if(NOT SDL2_MIXER_LIBRARY)
+        find_library(SDL2_MIXER_LIBRARY SDL2_mixer)
+    endif()
+    if(NOT SDL2_GFX_LIBRARY)
+        find_library(SDL2_GFX_LIBRARY SDL2_gfx)
     endif()
     
-    # Fallback to standard find_library
-    if(NOT SDL_INCLUDE_DIR)
-        find_path(SDL_INCLUDE_DIR SDL/SDL.h PATHS ${MSYS2_INCLUDE_DIR})
-    endif()
-    if(NOT SDL_LIBRARY)
-        find_library(SDL_LIBRARY SDL PATHS ${MSYS2_LIB_DIR})
-    endif()
-    if(NOT SDL_TTF_LIBRARY)
-        find_library(SDL_TTF_LIBRARY SDL_ttf PATHS ${MSYS2_LIB_DIR})
-    endif()
-    if(NOT SDL_IMAGE_LIBRARY)
-        find_library(SDL_IMAGE_LIBRARY SDL_image PATHS ${MSYS2_LIB_DIR})
-    endif()
-    if(NOT SDL_MIXER_LIBRARY)
-        find_library(SDL_MIXER_LIBRARY SDL_mixer PATHS ${MSYS2_LIB_DIR})
-    endif()
-    if(NOT SDL_GFX_LIBRARY)
-        find_library(SDL_GFX_LIBRARY SDL_gfx PATHS ${MSYS2_LIB_DIR})
-    endif()
-    
-    if(NOT SDL_GFX_LIBRARY)
-        message(WARNING "SDL_gfx not found. Install manually or build from source.")
+    if(NOT SDL2_GFX_LIBRARY)
+        message(WARNING "SDL2_gfx not found. Install manually or build from source.")
     endif()
     
     # Set up include directories
-    if(SDL_INCLUDE_DIR)
-        target_include_directories(pacman_sdl PRIVATE ${SDL_INCLUDE_DIR})
-        if(EXISTS "${SDL_INCLUDE_DIR}/SDL")
-            target_include_directories(pacman_sdl PRIVATE "${SDL_INCLUDE_DIR}/SDL")
+    if(SDL2_INCLUDE_DIR)
+        target_include_directories(pacman_sdl PRIVATE ${SDL2_INCLUDE_DIR})
+        if(EXISTS "${SDL2_INCLUDE_DIR}/SDL2")
+            target_include_directories(pacman_sdl PRIVATE "${SDL2_INCLUDE_DIR}/SDL2")
         endif()
     endif()
     
     # Export variables
-    set(SDL_INCLUDE_DIR ${SDL_INCLUDE_DIR} PARENT_SCOPE)
-    set(SDL_LIBRARY ${SDL_LIBRARY} PARENT_SCOPE)
-    set(SDL_TTF_LIBRARY ${SDL_TTF_LIBRARY} PARENT_SCOPE)
-    set(SDL_IMAGE_LIBRARY ${SDL_IMAGE_LIBRARY} PARENT_SCOPE)
-    set(SDL_MIXER_LIBRARY ${SDL_MIXER_LIBRARY} PARENT_SCOPE)
-    set(SDL_GFX_LIBRARY ${SDL_GFX_LIBRARY} PARENT_SCOPE)
+    set(SDL2_INCLUDE_DIR ${SDL2_INCLUDE_DIR} PARENT_SCOPE)
+    set(SDL2_LIBRARY ${SDL2_LIBRARY} PARENT_SCOPE)
+    set(SDL2_TTF_LIBRARY ${SDL2_TTF_LIBRARY} PARENT_SCOPE)
+    set(SDL2_IMAGE_LIBRARY ${SDL2_IMAGE_LIBRARY} PARENT_SCOPE)
+    set(SDL2_MIXER_LIBRARY ${SDL2_MIXER_LIBRARY} PARENT_SCOPE)
+    set(SDL2_GFX_LIBRARY ${SDL2_GFX_LIBRARY} PARENT_SCOPE)
 endfunction()
 

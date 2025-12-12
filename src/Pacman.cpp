@@ -39,8 +39,8 @@ void Pacman::Draw(int ix, int iy, int obj, int type) {
     pos.h=PACSIZE;
     pos.w=PACSIZE;
 
-    SDL_SetAlpha(pacEl[3].get(),SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-    SDL_BlitSurface(pacEl[3].get(),NULL,buf.get(),&pos);
+    SDL_SetTextureAlphaMod(pacEl[3].get(), alpha);
+    SDL_RenderCopy(renderer, pacEl[3].get(), NULL, &pos);
 }
 void Pacman::reset(int ix, int iy) {
     animcounter=0;
@@ -166,11 +166,11 @@ void Pacman::Draw() {
     pos.w=PACSIZE;
     pos.h=PACSIZE;
 
-    SDL_Surface *surface = getSurfaceForDirection(frameIndex);
+    SDL_Texture *texture = getTextureForDirection(frameIndex);
 
-    if (surface) {
-        SDL_SetAlpha(surface,SDL_SRCALPHA|SDL_RLEACCEL,alpha);
-        SDL_BlitSurface(surface,NULL,buf.get(),&pos);
+    if (texture) {
+        SDL_SetTextureAlphaMod(texture, alpha);
+        SDL_RenderCopy(renderer, texture, NULL, &pos);
     }
 
     if ( !paused) {
@@ -189,21 +189,21 @@ unsigned int Pacman::getAnimationSequenceLength() const {
     return kAnimationFrameSequenceLength;
 }
 
-SDL_Surface* Pacman::getSurfaceForDirection(int frameIndex) const {
+SDL_Texture* Pacman::getTextureForDirection(int frameIndex) const {
     if (frameIndex < 0 || frameIndex >= NUMPACANIM)
         return NULL;
 
     struct DirectionCase {
         int dx;
         int dy;
-        SDL_Surface* (Pacman::*getter)(int) const;
+        SDL_Texture* (Pacman::*getter)(int) const;
     };
 
     static const DirectionCase mappings[] = {
-            { 1,  0, &Pacman::surfaceRight },
-            { -1, 0, &Pacman::surfaceLeft  },
-            { 0, -1, &Pacman::surfaceUp    },
-            { 0,  1, &Pacman::surfaceDown  }
+            { 1,  0, &Pacman::textureRight },
+            { -1, 0, &Pacman::textureLeft  },
+            { 0, -1, &Pacman::textureUp    },
+            { 0,  1, &Pacman::textureDown  }
     };
 
     for (size_t i = 0; i < sizeof(mappings)/sizeof(mappings[0]); ++i) {
@@ -211,26 +211,26 @@ SDL_Surface* Pacman::getSurfaceForDirection(int frameIndex) const {
             return (this->*mappings[i].getter)(frameIndex);
     }
 
-    return surfaceIdle(frameIndex);
+    return textureIdle(frameIndex);
 }
 
-SDL_Surface* Pacman::surfaceRight(int frameIndex) const {
+SDL_Texture* Pacman::textureRight(int frameIndex) const {
     return pacEl[frameIndex].get();
 }
 
-SDL_Surface* Pacman::surfaceLeft(int frameIndex) const {
+SDL_Texture* Pacman::textureLeft(int frameIndex) const {
     return pacElRot[frameIndex][1].get();
 }
 
-SDL_Surface* Pacman::surfaceUp(int frameIndex) const {
+SDL_Texture* Pacman::textureUp(int frameIndex) const {
     return pacElRot[frameIndex][2].get();
 }
 
-SDL_Surface* Pacman::surfaceDown(int frameIndex) const {
+SDL_Texture* Pacman::textureDown(int frameIndex) const {
     return pacElRot[frameIndex][0].get();
 }
 
-SDL_Surface* Pacman::surfaceIdle(int frameIndex) const {
+SDL_Texture* Pacman::textureIdle(int frameIndex) const {
     return pacEl[frameIndex].get();
 }
 
@@ -240,26 +240,39 @@ bool Pacman::LoadTextures(std::string path) {
     int i,j;
     std::string num[10];
     SDL_PixelFormat *fmt;
+    auto texture_deleter = [](SDL_Texture* t) { SDL_DestroyTexture(t); };
 
     for (i=0;i<10;i++)
         num[i]='0'+i;
 
     try {
         for (i=0;i<NUMPACANIM;i++) {
-            pacEl[i].reset(IMG_Load((std::filesystem::path(path) / ("pac" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
+            shared_ptr<SDL_Surface> tempSurface(IMG_Load((std::filesystem::path(path) / ("pac" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
 
-            if ( !pacEl[i] )
+            if ( !tempSurface )
                 throw Error("Failed to load pacman texture: " + num[i]);
 
-            fmt = pacEl[i]->format;
-            SDL_SetColorKey(pacEl[i].get(),SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(fmt,255,0,255));
+            fmt = tempSurface->format;
+            SDL_SetColorKey(tempSurface.get(), SDL_TRUE, SDL_MapRGB(fmt,255,0,255));
+
+            // Convert surface to texture
+            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, tempSurface.get());
+            if (tex == NULL)
+                throw Error("Failed to create texture from surface: " + num[i]);
+            pacEl[i].reset(tex, texture_deleter);
 
             //cache rotated sprites
             for (j=0;j<3;j++) {
+                shared_ptr<SDL_Surface> rotatedSurface;
                 if (j==1)
-                    pacElRot[i][j]=Rotate(pacEl[i],0,-1,1);
+                    rotatedSurface = Rotate(tempSurface, 0, -1, 1);
                 else
-                    pacElRot[i][j]=Rotate(pacEl[i],360-(j+1)*90);
+                    rotatedSurface = Rotate(tempSurface, 360-(j+1)*90);
+                
+                SDL_Texture* rotTex = SDL_CreateTextureFromSurface(renderer, rotatedSurface.get());
+                if (rotTex == NULL)
+                    throw Error("Failed to create rotated texture: " + num[i]);
+                pacElRot[i][j].reset(rotTex, texture_deleter);
             }
         }
 
@@ -314,9 +327,9 @@ void Pacman::setNextDir(int next) {
         }
     }
 }
-Pacman::Pacman(shared_ptr<SDL_Surface> buf, int os, int ix, int iy, int ispdmod,
+Pacman::Pacman(SDL_Renderer* renderer, int os, int ix, int iy, int ispdmod,
 			   int itilesize, int iheight, int iwidth, int *imap)
-:   Object( buf, os),
+:   Object( renderer, os),
     tilePos(ix, iy),
     pixelPos(ix * itilesize, iy * itilesize),
     direction(0, 0),

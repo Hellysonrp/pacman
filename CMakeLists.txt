@@ -12,11 +12,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(DetectPackageManager)
 detect_package_manager()
 
-# Handle Windows SDL download if needed
-if(WIN32 AND NOT PKG_MANAGER STREQUAL "pacman")
-    include(DownloadSDL)
-    download_sdl_libraries()
-endif()
+# SDL2 libraries are installed via package manager (MSYS2 on Windows)
 
 # Install missing packages
 include(InstallPackages)
@@ -68,9 +64,9 @@ find_sdl_libraries()
 target_link_libraries(pacman_sdl PRIVATE 
     Boost::boost
     Boost::filesystem
-    ${SDL_LIBRARY}
-    ${SDL_TTF_LIBRARY}
-    ${SDL_GFX_LIBRARY}
-    ${SDL_IMAGE_LIBRARY}
-    ${SDL_MIXER_LIBRARY}
+    ${SDL2_LIBRARY}
+    ${SDL2_TTF_LIBRARY}
+    ${SDL2_GFX_LIBRARY}
+    ${SDL2_IMAGE_LIBRARY}
+    ${SDL2_MIXER_LIBRARY}
 )

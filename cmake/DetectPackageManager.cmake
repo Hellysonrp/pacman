@@ -15,7 +15,7 @@ function(detect_package_manager)
             set(PKG_INSTALL_CMD "sudo ${APT_GET} install -y" PARENT_SCOPE)
             set(PKG_UPDATE_CMD "sudo ${APT_GET} update" PARENT_SCOPE)
             set(REQUIRED_PACKAGES 
-                "libsdl1.2-dev;libsdl-ttf2.0-dev;libsdl-gfx1.2-dev;libsdl-image1.2-dev;libsdl-mixer1.2-dev;libboost-dev;libboost-filesystem-dev"
+                "libsdl2-dev;libsdl2-ttf-dev;libsdl2-gfx-dev;libsdl2-image-dev;libsdl2-mixer-dev;libboost-dev;libboost-filesystem-dev"
                 PARENT_SCOPE
             )
         elseif(DNF)
@@ -23,9 +23,9 @@ function(detect_package_manager)
             set(PKG_CHECK "rpm -q" PARENT_SCOPE)
             set(PKG_INSTALL_CMD "sudo ${DNF} install -y" PARENT_SCOPE)
             set(PKG_UPDATE_CMD "sudo ${DNF} check-update || true" PARENT_SCOPE)
-            # Fedora uses sdl12-compat-devel for SDL 1.2 compatibility layer
+            # Fedora SDL2 packages
             set(REQUIRED_PACKAGES 
-                "sdl12-compat-devel;SDL_ttf-devel;SDL_gfx-devel;SDL_image-devel;SDL_mixer-devel;boost-devel"
+                "SDL2-devel;SDL2_ttf-devel;SDL2_gfx-devel;SDL2_image-devel;SDL2_mixer-devel;boost-devel"
                 PARENT_SCOPE
             )
         elseif(YUM)
@@ -33,9 +33,9 @@ function(detect_package_manager)
             set(PKG_CHECK "rpm -q" PARENT_SCOPE)
             set(PKG_INSTALL_CMD "sudo ${YUM} install -y" PARENT_SCOPE)
             set(PKG_UPDATE_CMD "sudo ${YUM} check-update || true" PARENT_SCOPE)
-            # Note: SDL 1.2 may not be available in modern RHEL/CentOS - may need EPEL or manual install
+            # RHEL/CentOS SDL2 packages
             set(REQUIRED_PACKAGES 
-                "SDL-devel;SDL_ttf-devel;SDL_gfx-devel;SDL_image-devel;SDL_mixer-devel;boost-devel"
+                "SDL2-devel;SDL2_ttf-devel;SDL2_gfx-devel;SDL2_image-devel;SDL2_mixer-devel;boost-devel"
                 PARENT_SCOPE
             )
         elseif(PACMAN)
@@ -47,19 +47,18 @@ function(detect_package_manager)
                 set(PKG_INSTALL_CMD "${PACMAN} -S --noconfirm" PARENT_SCOPE)
                 set(PKG_UPDATE_CMD "${PACMAN} -Sy" PARENT_SCOPE)
                 set(REQUIRED_PACKAGES 
-                    "mingw-w64-x86_64-SDL;mingw-w64-x86_64-SDL_ttf;mingw-w64-x86_64-SDL_gfx;mingw-w64-x86_64-SDL_image;mingw-w64-x86_64-SDL_mixer;mingw-w64-x86_64-boost"
+                    "mingw-w64-x86_64-SDL2;mingw-w64-x86_64-SDL2_ttf;mingw-w64-x86_64-SDL2_gfx;mingw-w64-x86_64-SDL2_image;mingw-w64-x86_64-SDL2_mixer;mingw-w64-x86_64-boost"
                     PARENT_SCOPE
                 )
             else()
                 # Arch Linux
-                # SDL 1.2 packages are available in official Extra repository
-                # sdl12-compat provides SDL 1.2 compatibility layer using SDL 2.0
+                # SDL2 packages are available in official Extra repository
                 set(PKG_MANAGER "pacman" PARENT_SCOPE)
                 set(PKG_CHECK "pacman -Q" PARENT_SCOPE)
                 set(PKG_INSTALL_CMD "sudo ${PACMAN} -S --noconfirm" PARENT_SCOPE)
                 set(PKG_UPDATE_CMD "sudo ${PACMAN} -Sy" PARENT_SCOPE)
                 set(REQUIRED_PACKAGES 
-                    "sdl12-compat;sdl_ttf;sdl_gfx;sdl_image;sdl_mixer;boost"
+                    "sdl2;sdl2_ttf;sdl2_gfx;sdl2_image;sdl2_mixer;boost"
                     PARENT_SCOPE
                 )
             endif()
@@ -72,7 +71,7 @@ function(detect_package_manager)
             set(PKG_INSTALL_CMD "${BREW} install" PARENT_SCOPE)
             set(PKG_UPDATE_CMD "${BREW} update" PARENT_SCOPE)
             set(REQUIRED_PACKAGES 
-                "sdl;sdl_ttf;sdl_gfx;sdl_image;sdl_mixer;boost"
+                "sdl2;sdl2_ttf;sdl2_gfx;sdl2_image;sdl2_mixer;boost"
                 PARENT_SCOPE
             )
         endif()
@@ -85,7 +84,7 @@ function(detect_package_manager)
             set(PKG_INSTALL_CMD "${PACMAN} -S --noconfirm" PARENT_SCOPE)
             set(PKG_UPDATE_CMD "${PACMAN} -Sy" PARENT_SCOPE)
             set(REQUIRED_PACKAGES 
-                "mingw-w64-x86_64-SDL;mingw-w64-x86_64-SDL_ttf;mingw-w64-x86_64-SDL_gfx;mingw-w64-x86_64-SDL_image;mingw-w64-x86_64-SDL_mixer;mingw-w64-x86_64-boost"
+                "mingw-w64-x86_64-SDL2;mingw-w64-x86_64-SDL2_ttf;mingw-w64-x86_64-SDL2_gfx;mingw-w64-x86_64-SDL2_image;mingw-w64-x86_64-SDL2_mixer;mingw-w64-x86_64-boost"
                 PARENT_SCOPE
             )
         endif()

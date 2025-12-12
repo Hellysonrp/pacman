@@ -11,7 +11,7 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <SDL/SDL_mixer.h>
+#include <SDL2/SDL_mixer.h>
 #include <string>
 #include <iostream>
 

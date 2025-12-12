@@ -11,8 +11,8 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <SDL/SDL.h>
-#include <SDL/SDL_image.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <string>
 #include <iostream>
 #include "Object.h"
@@ -56,7 +56,7 @@ class BckgrObj :
 	public Object
 {
 public:
-    BckgrObj(shared_ptr<SDL_Surface> buffer, int os);
+    BckgrObj(SDL_Renderer* renderer, int os);
 
     void Draw();
     void Draw(int ix, int iy, int obj=3, int type=1);
@@ -75,7 +75,7 @@ public:
     void setFruitAlpha(int a);
 
 private:
-    shared_ptr<SDL_Surface>
+    shared_ptr<SDL_Texture>
             mapEl[NUM_OF_MAP_TEXTURES],
             objEl[NUM_OF_MAP_TEXTURES],
             mapElRot[NUM_OF_MAP_TEXTURES][3];
@@ -88,5 +88,5 @@ private:
             specialspawned,
             specialeaten;
 
-    void drawSprite(shared_ptr<SDL_Surface> sprite, SDL_Rect& position, int alpha);
+    void drawSprite(shared_ptr<SDL_Texture> texture, SDL_Rect& position, int alpha);
 };

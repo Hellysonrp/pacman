@@ -41,9 +41,9 @@ void BckgrObj::setFruitAlpha(int a) {
     fruitalpha = a;
 }
 
-void BckgrObj::drawSprite(shared_ptr<SDL_Surface> sprite, SDL_Rect& position, int alpha) {
-    SDL_SetAlpha(sprite.get(), SDL_SRCALPHA|SDL_RLEACCEL, alpha);
-    SDL_BlitSurface(sprite.get(), NULL, buf.get(), &position);
+void BckgrObj::drawSprite(shared_ptr<SDL_Texture> texture, SDL_Rect& position, int alpha) {
+    SDL_SetTextureAlphaMod(texture.get(), alpha);
+    SDL_RenderCopy(renderer, texture.get(), NULL, &position);
 }
 
 void BckgrObj::Draw() {
@@ -61,7 +61,9 @@ void BckgrObj::Draw() {
 
     objcounter = 0;
 
-    SDL_BlitSurface(mapEl[0].get(), NULL, buf.get(), NULL);
+    // Render background texture full screen
+    SDL_Rect bgRect = {0, 0, settings.width, settings.height};
+    SDL_RenderCopy(renderer, mapEl[0].get(), NULL, &bgRect);
 
     //DRAW FIELD
     for (j=0;j<height;j++) {
@@ -176,6 +178,7 @@ bool BckgrObj::LoadTextures(std::string path) {
     int i;
     std::string num[NUM_OF_MAP_TEXTURES];
     SDL_PixelFormat *fmt;
+    auto texture_deleter = [](SDL_Texture* t) { SDL_DestroyTexture(t); };
 
     for (i=0;i<NUM_OF_MAP_TEXTURES;i++)
         num[i]='0'+i;
@@ -183,28 +186,45 @@ bool BckgrObj::LoadTextures(std::string path) {
     try {
         std::filesystem::path basePath(path);
         for (i=0;i<NUM_OF_MAP_TEXTURES;i++) {
-            mapEl[i].reset(IMG_Load((basePath / ("m" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
-            if ( mapEl[i] == NULL )
+            shared_ptr<SDL_Surface> tempSurface(IMG_Load((basePath / ("m" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
+            if ( tempSurface == NULL )
                 throw Error(num[i] + "Failed to load map texture");
 
             //get pixel format from surface
-            fmt=mapEl[i]->format;
+            fmt=tempSurface->format;
             //set the transparent color key to RGB 255 0 255
-            SDL_SetColorKey(mapEl[i].get(),SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(fmt,255,0,255));
+            SDL_SetColorKey(tempSurface.get(), SDL_TRUE, SDL_MapRGB(fmt,255,0,255));
 
+            // Convert surface to texture
+            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, tempSurface.get());
+            if (tex == NULL)
+                throw Error("Failed to create texture from surface: " + num[i]);
+            mapEl[i].reset(tex, texture_deleter);
+
+            // Create rotated versions
             for (int j=0;j<3;j++) {
-                mapElRot[i][j]=Rotate(mapEl[i],(j+1)*90);
+                shared_ptr<SDL_Surface> rotatedSurface = Rotate(tempSurface, (j+1)*90);
+                SDL_Texture* rotTex = SDL_CreateTextureFromSurface(renderer, rotatedSurface.get());
+                if (rotTex == NULL)
+                    throw Error("Failed to create rotated texture: " + num[i]);
+                mapElRot[i][j].reset(rotTex, texture_deleter);
             }
         }
         for (i=1;i<5;i++) {
-            objEl[i].reset(IMG_Load((basePath / ("o" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
-            if ( objEl[i] == NULL )
+            shared_ptr<SDL_Surface> tempSurface(IMG_Load((basePath / ("o" + num[i] + ".png")).string().c_str()), SDL_FreeSurface);
+            if ( tempSurface == NULL )
                 throw Error(num[i] + "Failed to load object texture");
 
             //get pixel format from surface
-            fmt=objEl[i]->format;
+            fmt=tempSurface->format;
             //set the transparent color key to RGB 255 0 255
-            SDL_SetColorKey(objEl[i].get(),SDL_SRCCOLORKEY | SDL_RLEACCEL, SDL_MapRGB(fmt,255,0,255));
+            SDL_SetColorKey(tempSurface.get(), SDL_TRUE, SDL_MapRGB(fmt,255,0,255));
+
+            // Convert surface to texture
+            SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, tempSurface.get());
+            if (tex == NULL)
+                throw Error("Failed to create object texture from surface: " + num[i]);
+            objEl[i].reset(tex, texture_deleter);
         }
 
         logtxt.print("Field textures loaded");
@@ -224,8 +244,8 @@ bool BckgrObj::LoadTextures(std::string path) {
     return true;
 }
 
-BckgrObj::BckgrObj( shared_ptr<SDL_Surface> buffer, int os)
-    :	Object( buffer, os),
+BckgrObj::BckgrObj( SDL_Renderer* renderer, int os)
+    :	Object( renderer, os),
     objcounter(0),
     fruitalpha(ALPHA_OPAQUE),
     specialspawned(false),
