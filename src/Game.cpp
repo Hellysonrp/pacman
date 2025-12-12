@@ -584,25 +584,37 @@ void Game::renderViewHscore() {
     }
 }
 
-void Game::renderMenu() {
+void Game::clearMenuTextures() {
     SDL_Renderer* renderer = app.getRenderer();
+    
+    // Clear frame textures
+    for (SDL_Texture* tex : menuFrameTextures) {
+        if (tex) SDL_DestroyTexture(tex);
+    }
+    menuFrameTextures.clear();
+    
+    // Clear option textures
+    for (SDL_Texture* tex : menuOptionTextures) {
+        if (tex) SDL_DestroyTexture(tex);
+    }
+    menuOptionTextures.clear();
+}
+
+void Game::cacheMenuTextures() {
+    SDL_Renderer* renderer = app.getRenderer();
+    TTF_Font* menuFace = menuFont ? menuFont : font;
     shared_ptr<SDL_Surface> txt;
     SDL_Texture* texture;
-    SDL_Color primaryColor,
-            highlightColor,
-            frameColor;
-    SDL_Rect lineRect,
-            optionRect,
-            hintRect,
-            backdropRect;
-    int winW, winH;
-
-    TTF_Font* menuFace = menuFont ? menuFont : font;
-
+    
+    SDL_Color primaryColor, highlightColor, frameColor;
     primaryColor.r = 255; primaryColor.g = 255; primaryColor.b = 0;
     highlightColor.r = 0; highlightColor.g = 255; highlightColor.b = 255;
     frameColor.r = 255; frameColor.g = 215; frameColor.b = 0;
-
+    
+    // Clear existing textures if any
+    clearMenuTextures();
+    
+    // Cache frame textures (5 lines, never change)
     const std::vector<std::string> frame = {
         "#############################",
         "#                           #",
@@ -610,6 +622,53 @@ void Game::renderMenu() {
         "#                           #",
         "#############################"
     };
+    
+    for (const std::string& line : frame) {
+        txt.reset(TTF_RenderUTF8_Solid(menuFace, line.c_str(), frameColor), SDL_FreeSurface);
+        if (!txt) throw Error("DrawText failed");
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (!texture) throw Error("Failed to create frame texture");
+        SDL_SetTextureColorMod(texture, 255, 255, 255);
+        SDL_SetTextureAlphaMod(texture, 255);
+        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        menuFrameTextures.push_back(texture);
+    }
+    
+    // Cache option textures (3 options, both selected and unselected states)
+    const std::vector<std::string> options = {"INICIAR JOGO", "LEADERBOARD", "SAIR"};
+    
+    for (size_t i = 0; i < options.size(); ++i) {
+        // Unselected texture
+        txt.reset(TTF_RenderUTF8_Solid(menuFace, options[i].c_str(), primaryColor), SDL_FreeSurface);
+        if (!txt) throw Error("DrawText failed");
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (!texture) throw Error("Failed to create option texture");
+        SDL_SetTextureColorMod(texture, 255, 255, 255);
+        SDL_SetTextureAlphaMod(texture, 255);
+        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        menuOptionTextures.push_back(texture);
+        
+        // Selected texture (with "> " and " <")
+        std::string selectedLabel = "> " + options[i] + " <";
+        txt.reset(TTF_RenderUTF8_Solid(menuFace, selectedLabel.c_str(), highlightColor), SDL_FreeSurface);
+        if (!txt) throw Error("DrawText failed");
+        texture = SDL_CreateTextureFromSurface(renderer, txt.get());
+        if (!texture) throw Error("Failed to create selected option texture");
+        SDL_SetTextureColorMod(texture, 255, 255, 255);
+        SDL_SetTextureAlphaMod(texture, 255);
+        SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
+        menuOptionTextures.push_back(texture);
+    }
+    
+    cachedMenuSelection = menuSelection;
+}
+
+void Game::renderMenu() {
+    SDL_Renderer* renderer = app.getRenderer();
+    SDL_Rect lineRect,
+            optionRect,
+            backdropRect;
+    int winW, winH;
 
     const int centerX = settings.fieldwidth * settings.tilesize / 2;
     const int centerY = settings.fieldheight * settings.tilesize / 2;
@@ -622,14 +681,9 @@ void Game::renderMenu() {
     optionRect.h = 40;
 
     lineRect.x = 0;
-    lineRect.y = centerY - static_cast<int>(frame.size() * 15); // Metade da altura total da moldura (6 linhas * 30px / 2).
+    lineRect.y = centerY - static_cast<int>(5 * 15); // Metade da altura total da moldura (5 linhas * 30px / 2).
     lineRect.w = 0;
     lineRect.h = 30;
-
-    hintRect.x = 0;
-    hintRect.y = 0;
-    hintRect.w = 0;
-    hintRect.h = 30;
 
     backdropRect.x = 0;
     backdropRect.y = 0;
@@ -649,15 +703,20 @@ void Game::renderMenu() {
         // Reset renderer draw color to opaque before rendering text textures
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 
-        for (const std::string& line : frame) {
-            txt.reset(TTF_RenderUTF8_Solid(menuFace, line.c_str(), frameColor), SDL_FreeSurface);
-            if (!txt) throw Error("DrawText failed");
-            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
-            if (texture) {
-                SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-                SDL_Rect centeredLine = {centerX - txt->w / 2, lineRect.y, txt->w, txt->h};
-                SDL_RenderCopy(renderer, texture, NULL, &centeredLine);
-                SDL_DestroyTexture(texture);
+        // Textures should already be cached during initialization
+        // If they're empty, something went wrong - try to cache them now
+        if (menuFrameTextures.empty()) {
+            cacheMenuTextures();
+        }
+
+        // Render cached frame textures
+        for (size_t i = 0; i < menuFrameTextures.size(); ++i) {
+            if (menuFrameTextures[i]) {
+                // Get texture dimensions for centering
+                int texW, texH;
+                SDL_QueryTexture(menuFrameTextures[i], NULL, NULL, &texW, &texH);
+                SDL_Rect centeredLine = {centerX - texW / 2, lineRect.y, texW, texH};
+                SDL_RenderCopy(renderer, menuFrameTextures[i], NULL, &centeredLine);
             }
             lineRect.y += 30;
         }
@@ -668,21 +727,21 @@ void Game::renderMenu() {
 
         const std::vector<std::string> options = {"INICIAR JOGO", "LEADERBOARD", "SAIR"};
 
+        // Render cached option textures
         for (size_t i = 0; i < options.size(); ++i) {
-            std::string label = options[i];
-            if (static_cast<int>(i) == menuSelection)
-                label = "> " + label + " <"; // Destaque textual simples para o item ativo.
-
-            SDL_Color activeColor = (static_cast<int>(i) == menuSelection) ? highlightColor : primaryColor;
-            // Opções usam a fonte apenas neste menu para não afetar outras telas.
-            txt.reset(TTF_RenderUTF8_Solid(menuFace, label.c_str(), activeColor), SDL_FreeSurface);
-            if (!txt) throw Error("DrawText failed");
-            texture = SDL_CreateTextureFromSurface(renderer, txt.get());
-            if (texture) {
-                SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND);
-                SDL_Rect centeredOption = {centerX - txt->w / 2, optionRect.y, txt->w, txt->h};
-                SDL_RenderCopy(renderer, texture, NULL, &centeredOption);
-                SDL_DestroyTexture(texture);
+            // Each option has 2 textures: [unselected, selected]
+            // Index: i*2 = unselected, i*2+1 = selected
+            int textureIndex = static_cast<int>(i) * 2;
+            if (static_cast<int>(i) == menuSelection) {
+                textureIndex += 1; // Use selected texture
+            }
+            
+            if (textureIndex < static_cast<int>(menuOptionTextures.size()) && menuOptionTextures[textureIndex]) {
+                // Get texture dimensions for centering
+                int texW, texH;
+                SDL_QueryTexture(menuOptionTextures[textureIndex], NULL, NULL, &texW, &texH);
+                SDL_Rect centeredOption = {centerX - texW / 2, optionRect.y, texW, texH};
+                SDL_RenderCopy(renderer, menuOptionTextures[textureIndex], NULL, &centeredOption);
             }
             optionRect.y += 40;
         }
@@ -1453,6 +1512,16 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
 
         logtxt.print("Font created");
 
+        // Initialize menu textures before any rendering
+        if (menuFont || font) {
+            try {
+                cacheMenuTextures();
+            } catch (Error& err) {
+                std::cerr << "Failed to cache menu textures: " << err.getDesc() << std::endl;
+                logtxt.print("Failed to cache menu textures");
+            }
+        }
+
         //loading level graphics
 
         objects[0] = new BckgrObj( app.getRenderer(), 10 );
@@ -1850,7 +1919,8 @@ Game::Game()
     awaitingHighscoreEntry(false),
     hasRecentGameOver(false),
     previousState(STATE_STOPPED),
-    menuSelection(0)
+    menuSelection(0),
+    cachedMenuSelection(-1)
 
 {
     int i;
@@ -1880,4 +1950,5 @@ Game::~Game()
 {
     if ( map ) delete[] map;
     if ( objmap ) delete[] objmap;
+    clearMenuTextures();
 }

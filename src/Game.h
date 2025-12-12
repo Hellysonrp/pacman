@@ -167,6 +167,15 @@ private:
 
     int previousState;
     int menuSelection;
+    int cachedMenuSelection;
+    
+    // Cached menu textures
+    std::vector<SDL_Texture*> menuFrameTextures;  // 5 frame line textures
+    std::vector<SDL_Texture*> menuOptionTextures; // 6 textures: 3 unselected + 3 selected
+    
+    void cacheMenuTextures();
+    void clearMenuTextures();
+    
     std::string
             num[10],
             name,
