@@ -261,8 +261,38 @@ void Game::emptyMsgPump() {
 }
 
 void Game::handleKeyDown(const SDL_KeyboardEvent& keyEvent) {
+    if ( getState() == STATE_MENU ) {
+        switch (keyEvent.keysym.sym) {
+        case SDLK_UP:
+            processInput(UP);
+            break;
+        case SDLK_DOWN:
+            processInput(DOWN);
+            break;
+        case SDLK_RETURN:
+        case SDLK_SPACE:
+            processInput(ENTER);
+            break;
+        case SDLK_ESCAPE:
+        case SDLK_q:
+            app.setQuit(true);
+            break;
+        default:
+            break;
+        }
+        return;
+    }
+
+    // Permite sair do leaderboard de volta para o menu usando ESC sem encerrar o jogo.
+    if ( getState() == STATE_VIEW_HSCORE && keyEvent.keysym.sym == SDLK_ESCAPE ) {
+        previousState = STATE_MENU;
+        rankingFromHotkey = false;
+        setState( STATE_MENU );
+        return;
+    }
     switch (keyEvent.keysym.sym) {
     case SDLK_ESCAPE:
+        break;
     case SDLK_q:
         app.setQuit(true);
         break;
@@ -490,6 +520,13 @@ void Game::renderViewHscore() {
             SDL_BlitSurface(txt.get(),NULL,buf.get(),&instructionRect);
         }
 
+        // Destaca o atalho ESC quando o leaderboard é acessado pelo menu principal.
+        instructionRect.y += 40;
+        const char* escMsg = "ESC volta para o menu principal";
+        txt.reset(TTF_RenderText_Solid(font,escMsg,col), SDL_FreeSurface);
+        if (!txt) throw Error("DrawText failed");
+        SDL_BlitSurface(txt.get(),NULL,buf.get(),&instructionRect);
+
     }
     catch ( Error& err ) {
         std::cerr << err.getDesc();
@@ -500,6 +537,117 @@ void Game::renderViewHscore() {
         std::cerr << "Unexpected exception in RenderViewHscore";
         app.setQuit(true);
         logtxt.print( "Unexpected error" );
+    }
+}
+
+void Game::renderMenu() {
+    shared_ptr<SDL_Surface>
+            buf = app.getScreen(),
+            txt;
+    SDL_Color primaryColor,
+            highlightColor,
+            frameColor;
+    SDL_Rect lineRect,
+            optionRect,
+            hintRect,
+            backdropRect;
+
+    TTF_Font* menuFace = menuFont ? menuFont : font;
+
+    primaryColor.r = 255; primaryColor.g = 255; primaryColor.b = 0;
+    highlightColor.r = 0; highlightColor.g = 255; highlightColor.b = 255;
+    frameColor.r = 255; frameColor.g = 215; frameColor.b = 0;
+
+    const std::vector<std::string> frame = {
+        "#############################",
+        "#                           #",
+        "#       PAC-MAN SDL         #",
+        "#        MAIN MENU          #",
+        "#                           #",
+        "#############################"
+    };
+
+    const int centerX = settings.fieldwidth * settings.tilesize / 2;
+    const int centerY = settings.fieldheight * settings.tilesize / 2;
+
+    optionRect.x = 0;
+    optionRect.y = 0;
+    optionRect.w = 0;
+    optionRect.h = 40;
+
+    lineRect.x = 0;
+    lineRect.y = centerY - static_cast<int>(frame.size() * 15); // Metade da altura total da moldura (6 linhas * 30px / 2).
+    lineRect.w = 0;
+    lineRect.h = 30;
+
+    hintRect.x = 0;
+    hintRect.y = 0;
+    hintRect.w = 0;
+    hintRect.h = 30;
+
+    backdropRect.x = 0;
+    backdropRect.y = 0;
+    backdropRect.w = buf->w;
+    backdropRect.h = buf->h;
+
+    try {
+        renderNormal();
+
+        SDL_Surface* backdrop = SDL_CreateRGBSurface(SDL_SWSURFACE | SDL_SRCALPHA,
+                                                    buf->w, buf->h,
+                                                    32, 0, 0, 0, 0);
+        if (!backdrop) throw Error("Overlay creation failed");
+        SDL_FillRect(backdrop, NULL, SDL_MapRGBA(backdrop->format, 0, 0, 0, 160));
+        SDL_SetAlpha(backdrop, SDL_SRCALPHA | SDL_RLEACCEL, 160);
+        SDL_BlitSurface(backdrop, NULL, buf.get(), &backdropRect);
+        SDL_FreeSurface(backdrop);
+
+        for (const std::string& line : frame) {
+            txt.reset(TTF_RenderText_Solid(menuFace, line.c_str(), frameColor), SDL_FreeSurface);
+            if (!txt) throw Error("DrawText failed");
+            SDL_Rect centeredLine = lineRect;
+            centeredLine.x = centerX - txt->w / 2;
+            SDL_BlitSurface(txt.get(), NULL, buf.get(), &centeredLine);
+            lineRect.y += 30;
+        }
+
+        // Reposiciona os blocos subsequentes de forma derivada para evitar sobreposição visual.
+        const int frameBottom = lineRect.y; // lineRect acumulou a altura da moldura.
+        optionRect.y = frameBottom + 10;
+
+        const std::vector<std::string> options = {"INICIAR JOGO", "LEADERBOARD", "SAIR"};
+
+        for (size_t i = 0; i < options.size(); ++i) {
+            std::string label = options[i];
+            if (static_cast<int>(i) == menuSelection)
+                label = "> " + label + " <"; // Destaque textual simples para o item ativo.
+
+            SDL_Color activeColor = (static_cast<int>(i) == menuSelection) ? highlightColor : primaryColor;
+            // Opções usam a fonte apenas neste menu para não afetar outras telas.
+            txt.reset(TTF_RenderText_Solid(menuFace, label.c_str(), activeColor), SDL_FreeSurface);
+            if (!txt) throw Error("DrawText failed");
+            SDL_Rect centeredOption = optionRect;
+            centeredOption.x = centerX - txt->w / 2;
+            SDL_BlitSurface(txt.get(), NULL, buf.get(), &centeredOption);
+            optionRect.y += 40;
+        }
+
+        // txt.reset(TTF_RenderText_Solid(menuFace, "Use as setas, ENTER e ESC", primaryColor), SDL_FreeSurface);
+        // if (!txt) throw Error("DrawText failed");
+        // SDL_Rect centeredHint = hintRect;
+        // centeredHint.y = optionRect.y + 20; // Hints ficam abaixo do último item para manter respiro.
+        // centeredHint.x = centerX - txt->w / 2;
+        // SDL_BlitSurface(txt.get(), NULL, buf.get(), &centeredHint);
+    }
+    catch ( Error& err ) {
+        std::cerr << err.getDesc();
+        app.setQuit(true);
+        logtxt.print( err.getDesc() );
+    }
+    catch ( ... ) {
+        std::cerr << "Unexpected exception in RenderMenu";
+        app.setQuit(true);
+        logtxt.print( "Unexpected error during RenderMenu()" );
     }
 }
 
@@ -535,6 +683,11 @@ void Game::setState(int st) {
         app.getSnd()->stop();
         app.getSnd()->play(0, 1);
         for (i=0;i<NUMOFOBJECTS;i++) if ( objects[i] ) objects[i]->setPaused( true);
+        for (i=0;i<NUMOFOBJECTS;i++) if (objects[i]) objects[i]->setAlpha(255);
+    }
+    else if ( st == STATE_MENU ) {
+        app.getSnd()->stop();
+        for (i=0;i<NUMOFOBJECTS;i++) if ( objects[i] ) objects[i]->setPaused( true); // Congela sprites enquanto o menu é exibido.
         for (i=0;i<NUMOFOBJECTS;i++) if (objects[i]) objects[i]->setAlpha(255);
     }
     else if ( st == STATE_EDITOR ) {
@@ -1218,7 +1371,7 @@ void Game::gameInit(std::string level, std::string skin, bool editor) {
 
         app.getSnd()->play(9, 0);
 
-        setState( STATE_STOPPED);
+        setState( STATE_MENU); // Ao inicializar ou reiniciar, voltamos ao menu principal.
 
         hscore.setfilename((settings.lvlpath[settings.lvlpathcurrent] / "hscore").string());
         hscore.load();
@@ -1370,12 +1523,44 @@ void Game::processLogic() {
 
     time = SDL_GetTicks();
 
-    if ( state == STATE_GAME ) logicGame();
+    if ( state == STATE_MENU ) logicMenu();
+    else if ( state == STATE_GAME ) logicGame();
     else if (state == STATE_ENTER_HSCORE ) logicEnterHscore();
     else if (state == STATE_EDITOR ) logicEditor();
 
     oldtime = time;
     inputwaiting = false;
+}
+
+void Game::logicMenu() {
+    // Controla seleção das opções sem iniciar o loop de jogo.
+    if ( inputwaiting ) {
+        switch ( key ) {
+        case UP:
+            menuSelection = (menuSelection + 2) % 3; // Volta para o último item ao subir a partir do primeiro.
+            break;
+        case DOWN:
+            menuSelection = (menuSelection + 1) % 3; // Avança ciclicamente entre os itens disponíveis.
+            break;
+        case ENTER:
+            if ( menuSelection == 0 ) {
+                previousState = STATE_MENU;
+                gameInit(); // Reinicia recursos para garantir início limpo.
+                setState( STATE_STOPPED );
+            }
+            else if ( menuSelection == 1 ) {
+                rankingFromHotkey = false;
+                previousState = STATE_MENU;
+                setState( STATE_VIEW_HSCORE );
+            }
+            else if ( menuSelection == 2 ) {
+                app.setQuit(true);
+            }
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 void Game::getMaps( int **m, int **o) {
@@ -1463,7 +1648,8 @@ void Game::render() {
             // STATE SWITCH
             ////////////////////////////////
 
-            if ( (state == STATE_GAME) || (state == STATE_STOPPED) ) renderNormal();
+            if ( state == STATE_MENU ) renderMenu();
+            else if ( (state == STATE_GAME) || (state == STATE_STOPPED) ) renderNormal();
             else if (state == STATE_ENTER_HSCORE ) renderEnterHscore();
             else if (state == STATE_VIEW_HSCORE ) renderViewHscore();
             else if (state == STATE_EDITOR )renderEditor();
@@ -1500,6 +1686,14 @@ bool Game::loadFont() {
         font = TTF_OpenFont((PathUtils::getAppPath() / "arial.ttf").string().c_str(), 24);
         if (!font)
             throw Error("Failed to create font object ");
+
+        const std::string menuFontPath = (PathUtils::getAppPath() / "PAC-FONT.ttf").string();
+        menuFont = TTF_OpenFont(menuFontPath.c_str(), 20);
+        if (!menuFont) {
+            std::ostringstream fontError;
+            fontError << "Failed to create menu font object (" << menuFontPath << ") : " << TTF_GetError();
+            throw Error(fontError.str());
+        }
     }
     catch ( Error& err ) {
         std::cerr << err.getDesc();
@@ -1522,13 +1716,15 @@ void Game::PrepareShutdown() {
     int i;
 
     if ( font ) TTF_CloseFont(font);
+    if ( menuFont ) TTF_CloseFont(menuFont);
     for (i=0;i<NUMOFOBJECTS;i++) if ( objects[i] ) delete objects[i];
 }
 Game::Game()
 :   isinit(false),
-    state(STATE_STOPPED),
+    state(STATE_MENU),
     counter(0),
     font(NULL),
+    menuFont(NULL),
     map(NULL),
     objmap(NULL),
     deadghostcount(0),
@@ -1554,7 +1750,8 @@ Game::Game()
     rankingFromHotkey(false),
     awaitingHighscoreEntry(false),
     hasRecentGameOver(false),
-    previousState(STATE_STOPPED)
+    previousState(STATE_STOPPED),
+    menuSelection(0)
 
 {
     int i;
