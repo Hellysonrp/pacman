@@ -411,7 +411,7 @@ void Game::renderViewHscore() {
         else
             ostr << "level: " << level << " score: " << score;
 
-        txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
+        txt.reset(TTF_RenderUTF8_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
         texture = SDL_CreateTextureFromSurface(renderer, txt.get());
         if (texture) {
@@ -423,7 +423,7 @@ void Game::renderViewHscore() {
         if (hasRecentGameOver) {
             ostr.str("");
             ostr << "GAME OVER - PONTOS: " << lastRecordedScore;
-            txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -434,7 +434,7 @@ void Game::renderViewHscore() {
             rect.y += 50;
         }
 
-        txt.reset(TTF_RenderText_Solid(font,"HIGHSCORES:",col), SDL_FreeSurface);
+        txt.reset(TTF_RenderUTF8_Solid(font,"HIGHSCORES:",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
         texture = SDL_CreateTextureFromSurface(renderer, txt.get());
         if (texture) {
@@ -463,7 +463,7 @@ void Game::renderViewHscore() {
                 }
 
                 positionStream << (i+1) << "º";
-                txt.reset(TTF_RenderText_Solid(font,positionStream.str().c_str(),activeColor), SDL_FreeSurface);
+                txt.reset(TTF_RenderUTF8_Solid(font,positionStream.str().c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
                 texture = SDL_CreateTextureFromSurface(renderer, txt.get());
                 if (texture) {
@@ -475,7 +475,7 @@ void Game::renderViewHscore() {
                 SDL_Rect nameRect = entryRect;
                 nameRect.x += 70;
                 std::string nameToShow = entry.playerName.empty() ? "---" : entry.playerName;
-                txt.reset(TTF_RenderText_Solid(font,nameToShow.c_str(),activeColor), SDL_FreeSurface);
+                txt.reset(TTF_RenderUTF8_Solid(font,nameToShow.c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
                 texture = SDL_CreateTextureFromSurface(renderer, txt.get());
                 if (texture) {
@@ -488,7 +488,7 @@ void Game::renderViewHscore() {
                 scoreRect.x += 240;
                 scstr.str("");
                 scstr << entry.playerScore;
-                txt.reset(TTF_RenderText_Solid(font,scstr.str().c_str(),activeColor), SDL_FreeSurface);
+                txt.reset(TTF_RenderUTF8_Solid(font,scstr.str().c_str(),activeColor), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
                 texture = SDL_CreateTextureFromSurface(renderer, txt.get());
                 if (texture) {
@@ -508,7 +508,7 @@ void Game::renderViewHscore() {
 
         if (hasRecentGameOver) {
             const char* restartMsg = "Pressione N para iniciar uma nova partida";
-            txt.reset(TTF_RenderText_Solid(font,restartMsg,col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,restartMsg,col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -519,7 +519,7 @@ void Game::renderViewHscore() {
         }
         else if (rankingFromHotkey) {
             const char* backMsg = "Pressione H novamente para voltar";
-            txt.reset(TTF_RenderText_Solid(font,backMsg,col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,backMsg,col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -900,7 +900,7 @@ void Game::renderEnterHscore() {
         else
             ostr << "level: " << level << " score: " << score;
 
-        txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
+        txt.reset(TTF_RenderUTF8_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
         SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, txt.get());
         if (texture) {
@@ -912,7 +912,7 @@ void Game::renderEnterHscore() {
         // DRAW HIGHSCORE ENTRY
 
 
-        txt.reset(TTF_RenderText_Solid(font,"NEW HIGHSCORE!",col), SDL_FreeSurface);
+        txt.reset(TTF_RenderUTF8_Solid(font,"NEW HIGHSCORE!",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
         texture = SDL_CreateTextureFromSurface(renderer, txt.get());
         if (texture) {
@@ -924,7 +924,7 @@ void Game::renderEnterHscore() {
         rect.y += 50;
 
 
-        txt.reset(TTF_RenderText_Solid(font,"Enter name:",col), SDL_FreeSurface);
+        txt.reset(TTF_RenderUTF8_Solid(font,"Enter name:",col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
         texture = SDL_CreateTextureFromSurface(renderer, txt.get());
         if (texture) {
@@ -942,7 +942,7 @@ void Game::renderEnterHscore() {
             tmp=name[i];
             col.r=col.g=col.b=namecol[i];
 
-            txt.reset(TTF_RenderText_Solid(font,tmp.c_str(),col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,tmp.c_str(),col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -989,7 +989,7 @@ void Game::renderNormal() {
         ostr << "level: " << level << " score: " << score;
 
         SDL_Renderer* renderer = app.getRenderer();
-        txt.reset(TTF_RenderText_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
+        txt.reset(TTF_RenderUTF8_Solid(font,ostr.str().c_str(),col), SDL_FreeSurface);
         if (!txt) throw Error("DrawText failed");
         SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, txt.get());
         if (texture) {
@@ -1007,7 +1007,7 @@ void Game::renderNormal() {
 
             floatingscorebox.y--;
 
-            txt.reset(TTF_RenderText_Solid(font,scoretext.str().c_str(),col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,scoretext.str().c_str(),col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -1027,7 +1027,7 @@ void Game::renderNormal() {
             pauserect.x = settings.fieldheight*settings.tilesize / 2 - 10;
             pauserect.h = 50;
 
-            txt.reset(TTF_RenderText_Solid(font,"PAUSED",col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,"PAUSED",col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -1046,7 +1046,7 @@ void Game::renderNormal() {
             pauserect.y = settings.fieldheight*settings.tilesize / 2 - 10;
             pauserect.h = 50;
 
-            txt.reset(TTF_RenderText_Solid(font,"LEVEL CLEARED!",col), SDL_FreeSurface);
+            txt.reset(TTF_RenderUTF8_Solid(font,"LEVEL CLEARED!",col), SDL_FreeSurface);
             if (!txt) throw Error("DrawText failed");
             texture = SDL_CreateTextureFromSurface(renderer, txt.get());
             if (texture) {
@@ -1544,7 +1544,7 @@ void Game::render() {
 
 
             if ( showfps ) {
-                shared_ptr<SDL_Surface> txt(TTF_RenderText_Solid(font,fps.c_str(),col), SDL_FreeSurface);
+                shared_ptr<SDL_Surface> txt(TTF_RenderUTF8_Solid(font,fps.c_str(),col), SDL_FreeSurface);
                 if (!txt) throw Error("DrawText failed");
 
                 SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, txt.get());
