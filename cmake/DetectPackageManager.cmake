@@ -39,29 +39,16 @@ function(detect_package_manager)
                 PARENT_SCOPE
             )
         elseif(PACMAN)
-            # Check if this is MSYS2 (Windows) or Arch Linux
-            if(DEFINED ENV{MSYSTEM})
-                # MSYS2 environment
-                set(PKG_MANAGER "pacman" PARENT_SCOPE)
-                set(PKG_CHECK "${PACMAN} -Q" PARENT_SCOPE)
-                set(PKG_INSTALL_CMD "${PACMAN} -S --noconfirm" PARENT_SCOPE)
-                set(PKG_UPDATE_CMD "${PACMAN} -Sy" PARENT_SCOPE)
-                set(REQUIRED_PACKAGES 
-                    "mingw-w64-x86_64-SDL2;mingw-w64-x86_64-SDL2_ttf;mingw-w64-x86_64-SDL2_gfx;mingw-w64-x86_64-SDL2_image;mingw-w64-x86_64-SDL2_mixer;mingw-w64-x86_64-boost"
-                    PARENT_SCOPE
-                )
-            else()
-                # Arch Linux
-                # SDL2 packages are available in official Extra repository
-                set(PKG_MANAGER "pacman" PARENT_SCOPE)
-                set(PKG_CHECK "pacman -Q" PARENT_SCOPE)
-                set(PKG_INSTALL_CMD "sudo ${PACMAN} -S --noconfirm" PARENT_SCOPE)
-                set(PKG_UPDATE_CMD "sudo ${PACMAN} -Sy" PARENT_SCOPE)
-                set(REQUIRED_PACKAGES 
-                    "sdl2;sdl2_ttf;sdl2_gfx;sdl2_image;sdl2_mixer;boost"
-                    PARENT_SCOPE
-                )
-            endif()
+            # Arch Linux
+            # SDL2 packages are available in official Extra repository
+            set(PKG_MANAGER "pacman" PARENT_SCOPE)
+            set(PKG_CHECK "pacman -Q" PARENT_SCOPE)
+            set(PKG_INSTALL_CMD "sudo ${PACMAN} -S --noconfirm" PARENT_SCOPE)
+            set(PKG_UPDATE_CMD "sudo ${PACMAN} -Sy" PARENT_SCOPE)
+            set(REQUIRED_PACKAGES 
+                "sdl2;sdl2_ttf;sdl2_gfx;sdl2_image;sdl2_mixer;boost"
+                PARENT_SCOPE
+            )
         endif()
     elseif(APPLE)
         find_program(BREW brew)
@@ -76,16 +63,34 @@ function(detect_package_manager)
             )
         endif()
     elseif(WIN32)
-        find_program(PACMAN pacman)
-        if(PACMAN AND DEFINED ENV{MSYSTEM})
-            # MSYS2 on Windows
-            set(PKG_MANAGER "pacman" PARENT_SCOPE)
-            set(PKG_CHECK "${PACMAN} -Q" PARENT_SCOPE)
-            set(PKG_INSTALL_CMD "${PACMAN} -S --noconfirm" PARENT_SCOPE)
-            set(PKG_UPDATE_CMD "${PACMAN} -Sy" PARENT_SCOPE)
-            set(REQUIRED_PACKAGES 
-                "mingw-w64-x86_64-SDL2;mingw-w64-x86_64-SDL2_ttf;mingw-w64-x86_64-SDL2_gfx;mingw-w64-x86_64-SDL2_image;mingw-w64-x86_64-SDL2_mixer;mingw-w64-x86_64-boost"
-                PARENT_SCOPE
+        # Windows - use vcpkg
+        if(DEFINED ENV{VCPKG_ROOT})
+            set(VCPKG_ROOT "$ENV{VCPKG_ROOT}" PARENT_SCOPE)
+            find_program(VCPKG vcpkg PATHS "$ENV{VCPKG_ROOT}" NO_DEFAULT_PATH)
+            if(NOT VCPKG)
+                find_program(VCPKG vcpkg)
+            endif()
+            
+            if(VCPKG)
+                set(PKG_MANAGER "vcpkg" PARENT_SCOPE)
+                set(PKG_CHECK "${VCPKG} list" PARENT_SCOPE)
+                set(PKG_INSTALL_CMD "${VCPKG} install" PARENT_SCOPE)
+                set(PKG_UPDATE_CMD "echo No update needed for vcpkg" PARENT_SCOPE)
+                set(REQUIRED_PACKAGES 
+                    "sdl2;sdl2-ttf;sdl2-gfx;sdl2-image;sdl2-mixer;boost-filesystem"
+                    PARENT_SCOPE
+                )
+            else()
+                message(FATAL_ERROR 
+                    "vcpkg not found. Please install vcpkg and set the VCPKG_ROOT environment variable.\n"
+                    "See https://github.com/Microsoft/vcpkg for installation instructions."
+                )
+            endif()
+        else()
+            message(FATAL_ERROR 
+                "VCPKG_ROOT environment variable is not set.\n"
+                "Please install vcpkg and set the VCPKG_ROOT environment variable to the vcpkg installation directory.\n"
+                "See https://github.com/Microsoft/vcpkg for installation instructions."
             )
         endif()
     endif()

@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.31)
 
+# Set up vcpkg toolchain for Windows (must be before project())
+if(WIN32 AND DEFINED ENV{VCPKG_ROOT})
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+endif()
+
 project(Pacman)
 
 # Set C++17 standard for std::filesystem
@@ -12,7 +17,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(DetectPackageManager)
 detect_package_manager()
 
-# SDL2 libraries are installed via package manager (MSYS2 on Windows)
+# SDL2 libraries are installed via package manager (vcpkg on Windows)
 
 # Install missing packages
 include(InstallPackages)
@@ -42,18 +47,7 @@ source_group("Levels" FILES ${LEVEL_FILES})
 source_group("Skins" FILES ${SKIN_FILES})
 source_group("Sounds" FILES ${SOUND_FILES})
 
-# Find Boost
-if(DEFINED ENV{MSYSTEM})
-    if(EXISTS "/mingw64")
-        set(BOOST_ROOT "/mingw64")
-    elseif(EXISTS "/mingw32")
-        set(BOOST_ROOT "/mingw32")
-    elseif(EXISTS "/ucrt64")
-        set(BOOST_ROOT "/ucrt64")
-    elseif(EXISTS "/clang64")
-        set(BOOST_ROOT "/clang64")
-    endif()
-endif()
+# Find Boost (vcpkg provides proper CMake config on Windows)
 find_package(Boost REQUIRED COMPONENTS filesystem)
 
 # Find SDL libraries
