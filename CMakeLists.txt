@@ -53,6 +53,7 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:pacman_sdl>/sound
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/sound $<TARGET_FILE_DIR:pacman_sdl>/sound
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/arial.ttf $<TARGET_FILE_DIR:pacman_sdl>/arial.ttf
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/PAC-FONT.ttf $<TARGET_FILE_DIR:pacman_sdl>/PAC-FONT.ttf
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/settings.conf $<TARGET_FILE_DIR:pacman_sdl>/settings.conf
         COMMENT "Copying resource files to output directory"
     )
@@ -62,6 +63,7 @@ else()
     file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/skins ${CMAKE_CURRENT_BINARY_DIR}/skins SYMBOLIC)
     file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/sound ${CMAKE_CURRENT_BINARY_DIR}/sound SYMBOLIC)
     file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/arial.ttf ${CMAKE_CURRENT_BINARY_DIR}/arial.ttf SYMBOLIC)
+    file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/PAC-FONT.ttf ${CMAKE_CURRENT_BINARY_DIR}/PAC-FONT.ttf SYMBOLIC)
     file(CREATE_LINK ${RELATIVE_SOURCE_DIR}/settings.conf ${CMAKE_CURRENT_BINARY_DIR}/settings.conf SYMBOLIC)
 endif()
 

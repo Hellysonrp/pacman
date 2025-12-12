@@ -47,6 +47,7 @@ public:
 
     void getMaps( int **m, int **o);
     void render();
+    void renderMenu();
     void renderNormal();
     void renderEnterHscore();
     void renderViewHscore();
@@ -55,6 +56,7 @@ public:
 
     void processInput(int k, int ix = -1, int iy = -1);
     void processLogic();
+    void logicMenu();
     void logicGame();
     void logicEnterHscore();
 
@@ -108,8 +110,8 @@ private:
             ticks;
 
     TTF_Font
-            *font;
-
+            *font,
+            *menuFont; 
     Object
             *objects[NUMOFOBJECTS];
 
@@ -164,6 +166,7 @@ private:
             hasRecentGameOver;
 
     int previousState;
+    int menuSelection;
     std::string
             num[10],
             name,

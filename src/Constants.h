@@ -12,6 +12,7 @@
 #define STATE_MAP_EDITOR 3
 #define STATE_STOPPED 4
 #define STATE_EDITOR 5
+#define STATE_MENU 6
 
 #define MODE_LEVELS 2
 #define MODE_SKINS 1
