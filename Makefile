@@ -18,4 +18,7 @@ else
 	@rm -rf build
 endif
 
-.PHONY: build generate clean
+start:
+	./build/pacman_sdl
+
+.PHONY: build generate clean start
