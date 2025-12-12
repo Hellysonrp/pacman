@@ -73,11 +73,12 @@ function(detect_package_manager)
             
             if(VCPKG)
                 set(PKG_MANAGER "vcpkg" PARENT_SCOPE)
+                set(VCPKG_EXE ${VCPKG} PARENT_SCOPE)
                 set(PKG_CHECK "${VCPKG} list" PARENT_SCOPE)
                 set(PKG_INSTALL_CMD "${VCPKG} install" PARENT_SCOPE)
                 set(PKG_UPDATE_CMD "echo No update needed for vcpkg" PARENT_SCOPE)
                 set(REQUIRED_PACKAGES 
-                    "sdl2;sdl2-ttf;sdl2-gfx;sdl2-image;sdl2-mixer;boost-filesystem"
+                    "sdl2;sdl2-ttf;sdl2-gfx;sdl2-image;sdl2-mixer;boost-filesystem;boost-dll"
                     PARENT_SCOPE
                 )
             else()

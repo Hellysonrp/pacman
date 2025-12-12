@@ -3,8 +3,10 @@
 function(check_package_installed PACKAGE_NAME PKG_CHECK_CMD RESULT_VAR)
     if(WIN32 AND PKG_MANAGER STREQUAL "vcpkg")
         # For vcpkg, check if package appears in the list output
+        # Extract vcpkg executable path from PKG_CHECK (format: "path/to/vcpkg.exe list")
+        string(REPLACE " list" "" VCPKG_EXE "${PKG_CHECK}")
         execute_process(
-            COMMAND ${PKG_CHECK_CMD}
+            COMMAND ${VCPKG_EXE} list
             OUTPUT_VARIABLE VCPKG_LIST_OUTPUT
             ERROR_QUIET
             RESULT_VARIABLE PKG_RESULT
@@ -64,12 +66,14 @@ function(install_missing_packages)
         foreach(PKG ${MISSING_PACKAGES})
             message(STATUS "Installing ${PKG}...")
             if(WIN32 AND PKG_MANAGER STREQUAL "vcpkg")
-                # For vcpkg on Windows, run command directly
+                # For vcpkg on Windows, run command directly with separate arguments
+                # Extract vcpkg executable path from PKG_CHECK (format: "path/to/vcpkg.exe list")
+                string(REPLACE " list" "" VCPKG_EXE "${PKG_CHECK}")
                 execute_process(
-                    COMMAND ${PKG_INSTALL_CMD} ${PKG}
-                    RESULT_VARIABLE INSTALL_RESULT
+                    COMMAND ${VCPKG_EXE} install ${PKG}
                     OUTPUT_QUIET
                     ERROR_QUIET
+                    RESULT_VARIABLE INSTALL_RESULT
                 )
             else()
                 # For Unix systems, use sh -c
