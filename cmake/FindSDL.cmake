@@ -10,35 +10,25 @@ function(find_sdl_libraries)
     
     # If find_package worked, use the imported targets
     if(TARGET SDL2::SDL2)
-        # vcpkg provides proper CMake targets
+        # vcpkg provides proper CMake targets - use them directly
         set(SDL2_FOUND TRUE PARENT_SCOPE)
         set(SDL2_TTF_FOUND TRUE PARENT_SCOPE)
         set(SDL2_IMAGE_FOUND TRUE PARENT_SCOPE)
         set(SDL2_MIXER_FOUND TRUE PARENT_SCOPE)
+        set(SDL2_GFX_FOUND TRUE PARENT_SCOPE)
         
-        # Get library paths from targets for linking
-        get_target_property(SDL2_LIBRARY SDL2::SDL2 LOCATION)
-        if(NOT SDL2_LIBRARY)
-            get_target_property(SDL2_LIBRARY SDL2::SDL2 IMPORTED_LOCATION)
+        # Store target names for linking (use targets directly, not paths)
+        set(SDL2_LIBRARY "SDL2::SDL2" PARENT_SCOPE)
+        set(SDL2_TTF_LIBRARY "SDL2_ttf::SDL2_ttf" PARENT_SCOPE)
+        set(SDL2_IMAGE_LIBRARY "SDL2_image::SDL2_image" PARENT_SCOPE)
+        set(SDL2_MIXER_LIBRARY "SDL2_mixer::SDL2_mixer" PARENT_SCOPE)
+        
+        # Check if SDL2_gfx target was found, otherwise fall back to manual finding
+        if(TARGET SDL2_gfx::SDL2_gfx)
+            set(SDL2_GFX_LIBRARY "SDL2_gfx::SDL2_gfx" PARENT_SCOPE)
+        else()
+            find_library(SDL2_GFX_LIBRARY SDL2_gfx)
         endif()
-        
-        get_target_property(SDL2_TTF_LIBRARY SDL2_ttf::SDL2_ttf LOCATION)
-        if(NOT SDL2_TTF_LIBRARY)
-            get_target_property(SDL2_TTF_LIBRARY SDL2_ttf::SDL2_ttf IMPORTED_LOCATION)
-        endif()
-        
-        get_target_property(SDL2_IMAGE_LIBRARY SDL2_image::SDL2_image LOCATION)
-        if(NOT SDL2_IMAGE_LIBRARY)
-            get_target_property(SDL2_IMAGE_LIBRARY SDL2_image::SDL2_image IMPORTED_LOCATION)
-        endif()
-        
-        get_target_property(SDL2_MIXER_LIBRARY SDL2_mixer::SDL2_mixer LOCATION)
-        if(NOT SDL2_MIXER_LIBRARY)
-            get_target_property(SDL2_MIXER_LIBRARY SDL2_mixer::SDL2_mixer IMPORTED_LOCATION)
-        endif()
-        
-        # SDL2_gfx doesn't have CMake config files, so find it manually even when other libraries use imported targets
-        find_library(SDL2_GFX_LIBRARY SDL2_gfx)
     else()
         # Fallback to manual finding when find_package didn't work
         find_path(SDL2_INCLUDE_DIR SDL2/SDL.h)
